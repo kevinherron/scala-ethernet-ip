@@ -26,22 +26,21 @@ import io.netty.buffer.ByteBuf
  * portion of the command shall be from 0 to 65511 bytes long. The receiver shall ignore any data that is contained in
  * the message. A NOP command does not require that a session be established.
  */
-case class Nop()(val data: Array[Byte] = Array.empty[Byte]) extends Command(NopCode)
+case class Nop() extends Command(NopCode)
 
 object Nop {
 
   val MaxBytes = 65511
 
   def encode(command: Nop, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
-    buffer.writeBytes(command.data)
-
     buffer
   }
 
   def decode(buffer: ByteBuf): Nop = {
     val size = Math.min(buffer.readableBytes(), MaxBytes)
+    buffer.readBytes(size)
 
-    Nop()(buffer.readBytes(size).array())
+    Nop()
   }
 
 }
