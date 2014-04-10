@@ -21,6 +21,7 @@ package com.digitalpetri.ethernetip.encapsulation.layers
 import com.digitalpetri.ethernetip.encapsulation.EncapsulationPacket
 import com.digitalpetri.ethernetip.encapsulation.commands.{SendRRData, SendUnitData}
 import com.digitalpetri.ethernetip.encapsulation.cpf.items.{UnconnectedDataItem, ConnectedDataItem}
+import com.typesafe.scalalogging.slf4j.Logging
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageCodec
@@ -28,7 +29,7 @@ import java.nio.ByteOrder
 import java.util
 import scala.util.{Failure, Success}
 
-class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] {
+class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with Logging {
 
   def encode(ctx: ChannelHandlerContext, msg: EncapsulationPacket, out: ByteBuf): Unit = {
     val buffer = out.order(ByteOrder.LITTLE_ENDIAN)
@@ -37,12 +38,12 @@ class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] {
   }
 
   def decode(ctx: ChannelHandlerContext, in: ByteBuf, out: util.List[AnyRef]): Unit = {
-    while (in.readableBytes() >= PacketLayer.HeaderSize) {
-      val buffer = in.order(ByteOrder.LITTLE_ENDIAN)
-      val length = buffer.getUnsignedShort(buffer.readerIndex() + PacketLayer.LengthOffset)
+    var startIndex = in.readerIndex()
 
-      // Is all of the encapsulated data here yet?
-      if (buffer.readableBytes() < PacketLayer.HeaderSize + length) return
+    while (in.readableBytes() >= PacketLayer.HeaderSize &&
+           in.readableBytes() >= PacketLayer.HeaderSize + getLength(in, startIndex)) {
+
+      val buffer = in.order(ByteOrder.LITTLE_ENDIAN)
 
       EncapsulationPacket.decode(buffer) match {
         case Success(packet) =>
@@ -50,9 +51,19 @@ class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] {
           out.add(packet)
 
         case Failure(ex) =>
-          // TODO
+          logger.error("Error decoding packet.", ex)
+
+          // Advance past any bytes we should have read but didn't...
+          val endIndex = startIndex + PacketLayer.HeaderSize + getLength(in, startIndex)
+          buffer.readerIndex(endIndex)
       }
+
+      startIndex = buffer.readerIndex()
     }
+  }
+
+  private def getLength(in: ByteBuf, startIndex: Int): Int = {
+    in.order(ByteOrder.LITTLE_ENDIAN).getUnsignedShort(startIndex + PacketLayer.LengthOffset)
   }
 
   private final def maybeRetainBuffer(ctx: ChannelHandlerContext, packet: EncapsulationPacket) {
