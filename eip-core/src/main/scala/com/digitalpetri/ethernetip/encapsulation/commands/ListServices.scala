@@ -34,14 +34,19 @@ case class ServiceInformation(itemId: Int, version: Int, capabilities: Int, name
 object ListServices {
 
   def encode(command: ListServices, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
-    buffer.writeShort(command.services.size)
-    command.services.foreach(encodeServiceInformation(_, buffer))
+    if (command.services.nonEmpty) {
+      buffer.writeShort(command.services.size)
+      command.services.foreach(encodeServiceInformation(_, buffer))
+    }
 
     buffer
   }
 
   def decode(buffer: ByteBuf): ListServices = {
-    val itemCount = buffer.readUnsignedShort()
+    val itemCount = {
+      if (buffer.readableBytes() >= 2) buffer.readUnsignedShort()
+      else 0
+    }
 
     def decodeItems(items: List[ServiceInformation], itemCount: Int): List[ServiceInformation] = {
       if (itemCount == 0) items

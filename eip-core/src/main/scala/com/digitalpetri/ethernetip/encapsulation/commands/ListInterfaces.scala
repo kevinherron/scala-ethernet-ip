@@ -33,14 +33,19 @@ case class InterfaceInformation(itemId: Int)(val data: Array[Byte])
 object ListInterfaces {
 
   def encode(command: ListInterfaces, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
-    buffer.writeShort(command.interfaces.size)
-    command.interfaces.foreach(encodeInterfaceInformation(_, buffer))
+    if (command.interfaces.nonEmpty) {
+      buffer.writeShort(command.interfaces.size)
+      command.interfaces.foreach(encodeInterfaceInformation(_, buffer))
+    }
 
     buffer
   }
 
   def decode(buffer: ByteBuf): ListInterfaces = {
-    val itemCount = buffer.readUnsignedShort()
+    val itemCount = {
+      if (buffer.readableBytes() >= 2) buffer.readUnsignedShort()
+      else 0
+    }
 
     def decodeItems(items: List[InterfaceInformation], itemCount: Int): List[InterfaceInformation] = {
       if (itemCount == 0) items

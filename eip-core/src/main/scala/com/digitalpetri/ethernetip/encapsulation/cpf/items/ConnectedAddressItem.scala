@@ -19,6 +19,7 @@
 package com.digitalpetri.ethernetip.encapsulation.cpf.items
 
 import com.digitalpetri.ethernetip.encapsulation.cpf.CpfItem
+import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 
 /**
@@ -34,10 +35,12 @@ object ConnectedAddressItem {
   val TypeId = 0xA1
   val Length = 4
 
-  def encode(item: ConnectedAddressItem, buffer: ByteBuf) {
+  def encode(item: ConnectedAddressItem, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
     buffer.writeShort(item.typeId)
     buffer.writeShort(Length)
     buffer.writeInt(item.connectionId.toInt)
+
+    buffer
   }
 
   def decode(buffer: ByteBuf): ConnectedAddressItem = {

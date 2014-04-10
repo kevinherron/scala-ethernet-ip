@@ -19,6 +19,7 @@
 package com.digitalpetri.ethernetip.encapsulation.cpf.items
 
 import com.digitalpetri.ethernetip.encapsulation.cpf.CpfItem
+import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 
 /**
@@ -50,7 +51,7 @@ object CipIdentityItem {
 
   val TypeId = 0x0C
 
-  def encode(item: CipIdentityItem, buffer: ByteBuf) {
+  def encode(item: CipIdentityItem, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
     buffer.writeShort(TypeId)
 
     // Length placeholder...
@@ -77,6 +78,8 @@ object CipIdentityItem {
     buffer.writerIndex(lengthStartIndex)
     buffer.writeShort(bytesWritten)
     buffer.resetWriterIndex()
+
+    buffer
   }
 
   def decode(buffer: ByteBuf): CipIdentityItem = {
