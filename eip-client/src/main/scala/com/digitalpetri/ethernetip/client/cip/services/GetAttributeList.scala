@@ -16,14 +16,12 @@ class GetAttributeList(request: GetAttributeListRequest,
   def response: Future[GetAttributeListResponse] = promise.future
 
   def getRequestData: ByteBuf = {
-    val buffer = Buffers.unpooled()
-
     val routerRequest = MessageRouterRequest(
       serviceCode = CipServiceCodes.GetAttributeList,
       requestPath = requestPath,
-      requestData = encode(request, buffer))
+      requestData = encode(request))
 
-    MessageRouterRequest.encode(routerRequest, buffer)
+    MessageRouterRequest.encode(routerRequest)
   }
 
   def setResponseData(data: ByteBuf): Option[ByteBuf] = {
