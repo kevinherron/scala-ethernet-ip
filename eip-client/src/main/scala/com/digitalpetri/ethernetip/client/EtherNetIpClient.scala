@@ -85,6 +85,42 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver {
     promise.future
   }
 
+  def listInterfaces(): Future[ListInterfaces] = {
+    implicit val ec = config.executionContext
+
+    val promise = Promise[ListInterfaces]()
+
+    sendCommand(ListInterfaces()).onComplete {
+      case Success(packet) =>
+        packet.data match {
+          case Some(cmd: ListInterfaces) => promise.success(cmd)
+          case Some(cmd) => promise.failure(new Exception(s"unexpected response: $cmd"))
+          case None => promise.failure(new Exception(s"error response: ${packet.status}"))
+        }
+      case Failure(ex) => promise.failure(ex)
+    }
+
+    promise.future
+  }
+
+  def listServices(): Future[ListServices] = {
+    implicit val ec = config.executionContext
+
+    val promise = Promise[ListServices]()
+
+    sendCommand(ListServices()).onComplete {
+      case Success(packet) =>
+        packet.data match {
+          case Some(cmd: ListServices) => promise.success(cmd)
+          case Some(cmd) => promise.failure(new Exception(s"unexpected response: $cmd"))
+          case None => promise.failure(new Exception(s"error response: ${packet.status}"))
+        }
+      case Failure(ex) => promise.failure(ex)
+    }
+
+    promise.future
+  }
+
   def sendData(command: SendRRData): Future[SendRRData] = {
     // TODO This should be caller-runs since it probably contains a retained ByteBuf
     implicit val ec = config.executionContext
