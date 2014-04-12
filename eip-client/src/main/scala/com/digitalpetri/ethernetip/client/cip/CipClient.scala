@@ -29,12 +29,12 @@ import io.netty.buffer.ByteBuf
 import io.netty.util.{TimerTask, Timeout}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{ExecutionContext, Promise, Future}
+import scala.concurrent.{Promise, Future}
 import scala.util.{Failure, Success}
 
 class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(config) with Logging {
 
-  implicit val executionContext = ExecutionContext.global // TODO get from config
+  implicit val executionContext = config.executionContext
 
   val pending = new TrieMap[Short, Promise[ByteBuf]]()
   val sequenceNumber = new AtomicInteger(0)
