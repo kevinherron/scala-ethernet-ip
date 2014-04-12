@@ -1,16 +1,26 @@
 package com.digitalpetri.ethernetip.cip
 
+import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
+import scala.util.Try
 
-
+/**
+ * @param serviceCode Service code of the request.
+ * @param requestPath The request/application path.
+ * @param requestData Service specific data per object definition to be delivered in the Explicit Messaging Request.
+ *                    If no additional data is to be sent with the Explicit Messaging Request, then this array will be
+ *                    empty.
+ */
 case class MessageRouterRequest(serviceCode: Int, requestPath: EPath, requestData: ByteBuf)
 
 object MessageRouterRequest {
 
-  def encode(request: MessageRouterRequest, buffer: ByteBuf) {
+  def encode(request: MessageRouterRequest, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
     buffer.writeByte(request.serviceCode)
     EPath.encode(request.requestPath, buffer)
     buffer.writeBytes(request.requestData)
+
+    buffer
   }
 
   def decode(buffer: ByteBuf): MessageRouterRequest = {
@@ -22,7 +32,12 @@ object MessageRouterRequest {
 
 }
 
-
+/**
+ * @param serviceCode The request service code + 0x80.
+ * @param generalStatus One of the general status codes defined in the CIP specification appendix B.
+ * @param additionalStatus Additional status codes.
+ * @param data Response data.
+ */
 case class MessageRouterResponse(serviceCode: Int,
                                  generalStatus: Short,
                                  additionalStatus: Seq[Short],
@@ -39,7 +54,7 @@ object MessageRouterResponse {
     response.data.foreach(buffer.writeBytes)
   }
 
-  def decode(buffer: ByteBuf): MessageRouterResponse = {
+  def decode(buffer: ByteBuf): Try[MessageRouterResponse] = Try {
     val replyService  = buffer.readUnsignedShort()
     val reserved      = buffer.readByte()
     val generalStatus = buffer.readUnsignedByte()
