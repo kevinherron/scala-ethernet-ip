@@ -28,7 +28,7 @@ import io.netty.buffer.ByteBuf
  *
  * @param connectionId The connection identifier, exchanged in the Forward Open service of the Connection Manager.
  */
-case class ConnectedAddressItem(connectionId: Long) extends CpfItem(ConnectedAddressItem.TypeId)
+case class ConnectedAddressItem(connectionId: Int) extends CpfItem(ConnectedAddressItem.TypeId)
 
 object ConnectedAddressItem {
 
@@ -38,7 +38,7 @@ object ConnectedAddressItem {
   def encode(item: ConnectedAddressItem, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
     buffer.writeShort(item.typeId)
     buffer.writeShort(Length)
-    buffer.writeInt(item.connectionId.toInt)
+    buffer.writeInt(item.connectionId)
 
     buffer
   }
@@ -46,7 +46,7 @@ object ConnectedAddressItem {
   def decode(buffer: ByteBuf): ConnectedAddressItem = {
     val typeId        = buffer.readUnsignedShort()
     val length        = buffer.readUnsignedShort()
-    val connectionId  = buffer.readUnsignedInt()
+    val connectionId  = buffer.readInt()
 
     assert(typeId == TypeId)
     assert(length == Length)
