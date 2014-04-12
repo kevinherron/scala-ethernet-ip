@@ -28,11 +28,15 @@ object EtherNetIpClientMain extends App {
   val client = new EtherNetIpClient(config)
 
   val future = for {
-    identity <- client.listIdentity()
-    register <- client.registerSession()
+    identity    <- client.listIdentity()
+    register    <- client.registerSession()
+    services    <- client.listServices()
+    interfaces  <- client.listInterfaces()
   } yield {
     println(s"identity=$identity")
     println(s"register=$register")
+    println(s"services=$services")
+    println(s"interfaces=$interfaces")
   }
 
   future.onFailure {
