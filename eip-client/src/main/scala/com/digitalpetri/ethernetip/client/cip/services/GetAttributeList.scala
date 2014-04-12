@@ -1,6 +1,7 @@
 package com.digitalpetri.ethernetip.client.cip.services
 
-import com.digitalpetri.ethernetip.cip.{CipServiceCodes, MessageRouterResponse, EPath, MessageRouterRequest}
+import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
+import com.digitalpetri.ethernetip.cip.{CipServiceCodes, MessageRouterResponse, MessageRouterRequest}
 import com.digitalpetri.ethernetip.client.cip.InvokableService
 import com.digitalpetri.ethernetip.client.cip.services.GetAttributeList.{GetAttributeListResponse, GetAttributeListRequest, AttributeRequest, AttributeResponse}
 import com.digitalpetri.ethernetip.util.Buffers
@@ -9,7 +10,7 @@ import scala.concurrent.{Promise, Future}
 import scala.util.{Success, Failure, Try}
 
 class GetAttributeList(request: GetAttributeListRequest,
-                       requestPath: EPath) extends InvokableService[GetAttributeListResponse] {
+                       requestPath: PaddedEPath) extends InvokableService[GetAttributeListResponse] {
 
   private val promise = Promise[GetAttributeListResponse]()
 
@@ -30,8 +31,9 @@ class GetAttributeList(request: GetAttributeListRequest,
       response    <- decode(request, routerData)
     } yield response
 
-    responseTry.map(promise.success).recover {
-      case ex => promise.failure(ex)
+    responseTry match {
+      case Success(response) => promise.success(response)
+      case Failure(ex) => promise.failure(ex)
     }
 
     None

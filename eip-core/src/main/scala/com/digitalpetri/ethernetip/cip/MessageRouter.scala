@@ -1,5 +1,6 @@
 package com.digitalpetri.ethernetip.cip
 
+import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 import scala.util.Try
@@ -11,13 +12,13 @@ import scala.util.Try
  *                    If no additional data is to be sent with the Explicit Messaging Request, then this array will be
  *                    empty.
  */
-case class MessageRouterRequest(serviceCode: Int, requestPath: EPath, requestData: ByteBuf)
+case class MessageRouterRequest(serviceCode: Int, requestPath: PaddedEPath, requestData: ByteBuf)
 
 object MessageRouterRequest {
 
   def encode(request: MessageRouterRequest, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
     buffer.writeByte(request.serviceCode)
-    EPath.encode(request.requestPath, buffer)
+    PaddedEPath.encode(request.requestPath, buffer)
     buffer.writeBytes(request.requestData)
 
     buffer
@@ -26,7 +27,7 @@ object MessageRouterRequest {
   def decode(buffer: ByteBuf): MessageRouterRequest = {
     MessageRouterRequest(
       serviceCode = buffer.readUnsignedByte(),
-      requestPath = EPath.decode(buffer),
+      requestPath = PaddedEPath.decode(buffer),
       requestData = buffer.slice())
   }
 
