@@ -1,63 +1,98 @@
 package com.digitalpetri.ethernetip.client.cip.services
 
-import com.digitalpetri.ethernetip.cip.{UnconnectedSendRequest, MessageRouterRequest, CipConnection, EPath}
-import com.digitalpetri.ethernetip.client.cip.CipClient
-import com.digitalpetri.ethernetip.client.cip.services.GetAttributeList.AttributeResponse
+import com.digitalpetri.ethernetip.cip.{CipServiceCodes, MessageRouterResponse, EPath, MessageRouterRequest}
+import com.digitalpetri.ethernetip.client.cip.InvokableService
+import com.digitalpetri.ethernetip.client.cip.services.GetAttributeList.{GetAttributeListResponse, GetAttributeListRequest, AttributeRequest, AttributeResponse}
 import com.digitalpetri.ethernetip.util.Buffers
-import io.netty.buffer.ByteBuf
+import io.netty.buffer.{Unpooled, ByteBuf}
 import scala.concurrent.{Promise, Future}
-import scala.util.{Try, Failure, Success}
+import scala.util.{Success, Failure, Try}
 
-class GetAttributeList(attributes: Seq[Int]) extends CipService[Seq[Int], Seq[AttributeResponse]] {
+class GetAttributeList(request: GetAttributeListRequest,
+                       requestPath: EPath) extends InvokableService[GetAttributeListResponse] {
 
-  def serviceCode: Int = 0x03
+  private val promise = Promise[GetAttributeListResponse]()
 
-  def invoke(request: Seq[Int], requestPath: EPath, connection: CipConnection)
-            (implicit client: CipClient): Future[Seq[AttributeResponse]] = {
+  def response: Future[GetAttributeListResponse] = promise.future
 
-    ???
+  def getRequestData: ByteBuf = {
+    val buffer = Buffers.unpooled()
+
+    val routerRequest = MessageRouterRequest(
+      serviceCode = CipServiceCodes.GetAttributeList,
+      requestPath = requestPath,
+      requestData = encode(request, buffer))
+
+    MessageRouterRequest.encode(routerRequest, buffer)
   }
 
-  def invoke(request: Seq[Int], requestPath: EPath, connectionPath: EPath)
-            (implicit client: CipClient): Future[Seq[AttributeResponse]] = {
+  def setResponseData(data: ByteBuf): Option[ByteBuf] = {
+    val responseTry = for {
+      routerData  <- decodeMessageRouterResponse(data)
+      response    <- decode(request, routerData)
+    } yield response
 
-    implicit val ec = client.config.executionContext
-
-    val promise = Promise[Seq[AttributeResponse]]()
-
-    val data: ByteBuf = {
-      val requestData = encode(request, Buffers.unpooled())
-      val routerRequest = MessageRouterRequest(serviceCode, requestPath, requestData)
-      val unconnectedRequest = UnconnectedSendRequest(client.config.timeout, routerRequest, connectionPath)
-
-      UnconnectedSendRequest.encode(unconnectedRequest, Buffers.unpooled())
+    responseTry.map(promise.success).recover {
+      case ex => promise.failure(ex)
     }
 
-    client.sendUnconnectedData(data).onComplete {
-      case Success(buffer) =>
-        decode(request, buffer) match {
-          case Success(response) => promise.success(response)
-          case Failure(ex) => promise.failure(ex)
-        }
-
-      case Failure(ex) => promise.failure(ex)
-    }
-
-    promise.future
+    None
   }
 
-  private def encode(request: Seq[Int], buffer: ByteBuf): ByteBuf = {
-    // TODO
+  def setResponseFailure(ex: Throwable): Unit = promise.failure(ex)
+
+  private def encode(request: GetAttributeListRequest, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
+    buffer.writeShort(request.attributes.size)
+    request.attributes.foreach(a => buffer.writeShort(a.id))
+
     buffer
   }
 
-  private def decode(request: Seq[Int], buffer: ByteBuf): Try[Seq[AttributeResponse]] = {
-    ??? // TODO
+  private def decode(request: GetAttributeListRequest, buffer: ByteBuf): Try[GetAttributeListResponse] = Try {
+    val count = buffer.readUnsignedShort()
+    assert(count == request.attributes.size)
+
+    val attributes = request.attributes.map(ar => readAttributeResponse(ar, buffer))
+
+    GetAttributeListResponse(attributes)
+  }
+
+  private def readAttributeResponse(request: AttributeRequest, buffer: ByteBuf): AttributeResponse = {
+    val id = buffer.readUnsignedShort()
+    val status = buffer.readUnsignedShort()
+
+    val data: Option[ByteBuf] = {
+      if (status != 0x00) None
+      else Some(buffer.readBytes(request.size))
+    }
+
+    AttributeResponse(id, status, data)
+  }
+
+  private def decodeMessageRouterResponse(buffer: ByteBuf): Try[ByteBuf] = Try {
+    MessageRouterResponse.decode(buffer) match {
+      case Success(response) =>
+        if (response.generalStatus == 0x00) {
+          response.data.getOrElse(Unpooled.EMPTY_BUFFER)
+        } else {
+          throw new Exception(s"status=${response.generalStatus} additional=${response.additionalStatus}")
+        }
+      case Failure(ex) => throw ex
+    }
   }
 
 }
 
 object GetAttributeList {
+
+  case class GetAttributeListRequest(attributes: Seq[AttributeRequest])
+  case class GetAttributeListResponse(attributes: Seq[AttributeResponse])
+
+  /**
+   * @param id Attribute identifier.
+   * @param size Size (in bytes) of the attribute response data.
+   */
+  case class AttributeRequest(id: Int, size: Int)
 
   /**
    * @param id Attribute identifier.
