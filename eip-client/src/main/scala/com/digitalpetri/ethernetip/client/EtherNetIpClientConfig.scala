@@ -18,6 +18,7 @@
 
 package com.digitalpetri.ethernetip.client
 
+import com.digitalpetri.ethernetip.cip.EPath
 import io.netty.channel.EventLoopGroup
 import io.netty.util.HashedWheelTimer
 import java.util.concurrent.TimeUnit
@@ -26,6 +27,7 @@ import scala.concurrent.duration.{FiniteDuration, Duration}
 
 case class EtherNetIpClientConfig(host: String,
                                   port: Int = 44818,
+                                  connectionPath: EPath = EPath(), // TODO
                                   timeout: Duration = FiniteDuration(5, TimeUnit.SECONDS),
                                   executionContext: ExecutionContext = ExecutionContext.global,
                                   eventLoop: EventLoopGroup = EtherNetIp.SharedEventLoop,
