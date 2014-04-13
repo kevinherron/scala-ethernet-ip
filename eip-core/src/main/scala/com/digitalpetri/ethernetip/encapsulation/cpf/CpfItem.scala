@@ -42,12 +42,15 @@ object CpfItem {
 
     typeId match {
       case CipIdentityItem.TypeId       => CipIdentityItem.decode(buffer)
-      case ConnectedAddressItem.TypeId  => ConnectedAddressItem.decode(buffer)
       case ConnectedDataItem.TypeId     => ConnectedDataItem.decode(buffer)
+      case UnconnectedDataItem.TypeId   => UnconnectedDataItem.decode(buffer)
+      case ConnectedAddressItem.TypeId  => ConnectedAddressItem.decode(buffer)
       case NullAddressItem.TypeId       => NullAddressItem.decode(buffer)
       case SequencedAddressItem.TypeId  => SequencedAddressItem.decode(buffer)
       case SockaddrItem.TypeIdO2t       => SockaddrItem.decode(buffer)
       case SockaddrItem.TypeIdT2o       => SockaddrItem.decode(buffer)
+
+      case _ => throw new Exception(f"unhandled item type: 0x$typeId%02X")
     }
   }
 
