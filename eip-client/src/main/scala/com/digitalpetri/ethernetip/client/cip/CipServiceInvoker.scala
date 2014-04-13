@@ -1,14 +1,16 @@
 package com.digitalpetri.ethernetip.client.cip
 
 import com.digitalpetri.ethernetip.cip.CipConnection
-import com.digitalpetri.ethernetip.client.cip.services.{UnconnectedSend, UnconnectedSendRequest}
+import com.digitalpetri.ethernetip.client.cip.services.UnconnectedSend
+import com.digitalpetri.ethernetip.client.cip.services.UnconnectedSend.UnconnectedSendRequest
 import io.netty.buffer.ByteBuf
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 trait CipServiceInvoker {
   this: CipClient =>
 
-  def invokeService(service: InvokableService[_], connection: Option[CipConnection]) {
+  def invokeService[T](service: InvokableService[T], connection: Option[CipConnection] = None): Future[T] = {
     connection match {
       case Some(c) =>
         /*
@@ -30,7 +32,7 @@ trait CipServiceInvoker {
 
         def sendRequestData(requestData: ByteBuf) {
           val request = UnconnectedSendRequest(
-            desiredTimeout  = config.timeout,
+            timeout         = config.timeout,
             embeddedRequest = requestData,
             connectionPath  = config.connectionPath)
 
@@ -44,11 +46,16 @@ trait CipServiceInvoker {
               service.setResponseFailure(ex)
           }
 
-          invokeService(unconnectedService, None)
+          sendUnconnectedData(unconnectedService.getRequestData).onComplete {
+            case Success(responseData) => unconnectedService.setResponseData(responseData)
+            case Failure(ex) => unconnectedService.setResponseFailure(ex)
+          }
         }
 
         sendRequestData(service.getRequestData)
     }
+
+    service.response
   }
 
   def invokeMultiple(services: Seq[InvokableService[_]], connection: Option[CipConnection]) {
