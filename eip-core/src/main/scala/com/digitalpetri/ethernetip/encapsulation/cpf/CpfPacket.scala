@@ -18,6 +18,7 @@
 
 package com.digitalpetri.ethernetip.encapsulation.cpf
 
+import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 
 /**
@@ -31,16 +32,18 @@ import io.netty.buffer.ByteBuf
  *
  * @param items [[CpfItem]]s to be included in the packet.
  */
-case class CpfPacket(items: List[CpfItem])
+case class CpfPacket(items: Seq[CpfItem])
 
 object CpfPacket {
 
-  def encode(packet: CpfPacket, buffer: ByteBuf) {
-    if (packet.items.isEmpty) return
+  def encode(packet: CpfPacket, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
+    if (packet.items.isEmpty) return buffer
 
     buffer.writeShort(packet.items.size)
 
     packet.items.foreach(CpfItem.encode(_, buffer))
+
+    buffer
   }
 
   def decode(buffer: ByteBuf): CpfPacket = {

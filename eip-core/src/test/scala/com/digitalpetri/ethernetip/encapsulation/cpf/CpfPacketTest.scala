@@ -16,26 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.digitalpetri.ethernetip.encapsulation.cpf.items
+package com.digitalpetri.ethernetip.encapsulation.cpf
 
-import com.digitalpetri.ethernetip.util.Buffers
 import org.scalatest.FunSuite
+import com.digitalpetri.ethernetip.encapsulation.cpf.items.{UnconnectedDataItem, NullAddressItem}
+import com.digitalpetri.ethernetip.util.Buffers
 
-class ConnectedDataItemTest extends FunSuite {
+class CpfPacketTest extends FunSuite {
 
-  test("ConnectedDataItem typeId == 0xB1") {
-    val item = ConnectedDataItem(Buffers.unpooled().writeByte(42))
-
-    assert(item.typeId == 0xB1)
-  }
-
-  test("ConnectedDataItem is round-trip encodable/decodable") {
+  test("CpfPacket is round-trip encodable/decodable") {
     val buffer = Buffers.unpooled().writeByte(42)
-    val item = ConnectedDataItem(buffer)
-    val decoded = ConnectedDataItem.decode(ConnectedDataItem.encode(item))
+    val packet = CpfPacket(Seq(NullAddressItem(), UnconnectedDataItem(buffer)))
+    val decoded = CpfPacket.decode(CpfPacket.encode(packet))
     buffer.readerIndex(0)
 
-    assert(item == decoded)
+    assert (packet == decoded)
   }
 
 }

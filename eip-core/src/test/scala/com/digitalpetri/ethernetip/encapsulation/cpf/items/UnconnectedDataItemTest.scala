@@ -21,18 +21,18 @@ package com.digitalpetri.ethernetip.encapsulation.cpf.items
 import com.digitalpetri.ethernetip.util.Buffers
 import org.scalatest.FunSuite
 
-class ConnectedDataItemTest extends FunSuite {
+class UnconnectedDataItemTest extends FunSuite {
 
-  test("ConnectedDataItem typeId == 0xB1") {
-    val item = ConnectedDataItem(Buffers.unpooled().writeByte(42))
+  test("UnconnectedDataItem typeId == 0xB2") {
+    val item = UnconnectedDataItem(Buffers.unpooled().writeByte(42))
 
-    assert(item.typeId == 0xB1)
+    assert(item.typeId == 0xB2)
   }
 
-  test("ConnectedDataItem is round-trip encodable/decodable") {
-    val buffer = Buffers.unpooled().writeByte(42)
-    val item = ConnectedDataItem(buffer)
-    val decoded = ConnectedDataItem.decode(ConnectedDataItem.encode(item))
+  test("UnconnectedDataItem is round-trip encodable/decodable") {
+    val buffer = Buffers.unpooled().writeBytes(Array[Byte](1, 2, 3, 4))
+    val item = UnconnectedDataItem(buffer)
+    val decoded = UnconnectedDataItem.decode(UnconnectedDataItem.encode(item))
     buffer.readerIndex(0)
 
     assert(item == decoded)

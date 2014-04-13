@@ -16,6 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.digitalpetri.ethernetip.cip.epath
+package com.digitalpetri.ethernetip.encapsulation.cpf.items
 
-abstract class EPathSegment
+import org.scalatest.FunSuite
+
+class SequencedAddressItemTest extends FunSuite {
+
+  val item = SequencedAddressItem(1, 1234)
+
+  test("SequencedAddressItem typeId == 0x8002") {
+    assert(item.typeId == 0x8002)
+  }
+
+  test("SequencedAddressItem is round-trip encodable/decodable") {
+    val decoded = SequencedAddressItem.decode(SequencedAddressItem.encode(item))
+
+    assert(item == decoded)
+  }
+
+}

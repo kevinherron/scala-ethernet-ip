@@ -18,22 +18,19 @@
 
 package com.digitalpetri.ethernetip.encapsulation.cpf.items
 
-import com.digitalpetri.ethernetip.util.Buffers
 import org.scalatest.FunSuite
+import java.net.InetAddress
 
-class ConnectedDataItemTest extends FunSuite {
+class SockaddrItemT2oTest extends FunSuite {
 
-  test("ConnectedDataItem typeId == 0xB1") {
-    val item = ConnectedDataItem(Buffers.unpooled().writeByte(42))
+  val item = SockaddrItemT2o(Sockaddr(1, 44818, InetAddress.getLocalHost, 0))
 
-    assert(item.typeId == 0xB1)
+  test("SockaddrItemT2o typeId == 0x8001") {
+    assert(item.typeId == 0x8001)
   }
 
-  test("ConnectedDataItem is round-trip encodable/decodable") {
-    val buffer = Buffers.unpooled().writeByte(42)
-    val item = ConnectedDataItem(buffer)
-    val decoded = ConnectedDataItem.decode(ConnectedDataItem.encode(item))
-    buffer.readerIndex(0)
+  test("SockaddrItemT2o is round-trip encodable/decodable") {
+    val decoded = SockaddrItem.decode(SockaddrItem.encode(item))
 
     assert(item == decoded)
   }
