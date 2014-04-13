@@ -29,7 +29,7 @@ import scala.concurrent.{ExecutionContext, Promise}
 
 class ChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) extends AbstractChannelManager {
 
-  implicit val executionContext: ExecutionContext = ExecutionContext.global // TODO
+  implicit val executionContext: ExecutionContext = config.executionContext
 
   /**
    * Make a connection, completing the Promise with the resulting Channel.
