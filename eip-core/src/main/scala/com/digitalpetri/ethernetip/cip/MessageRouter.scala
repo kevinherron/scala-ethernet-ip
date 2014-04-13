@@ -56,7 +56,7 @@ object MessageRouterResponse {
   }
 
   def decode(buffer: ByteBuf): Try[MessageRouterResponse] = Try {
-    val replyService  = buffer.readUnsignedShort()
+    val replyService  = buffer.readUnsignedByte()
     val reserved      = buffer.readByte()
     val generalStatus = buffer.readUnsignedByte()
 
@@ -71,7 +71,7 @@ object MessageRouterResponse {
 
     val data: Option[ByteBuf] = {
       if (generalStatus != 0x00) None
-      else Some(buffer.slice())
+      else Some(buffer.readSlice(buffer.readableBytes()))
     }
 
     MessageRouterResponse(replyService, generalStatus, additionalStatus, data)
