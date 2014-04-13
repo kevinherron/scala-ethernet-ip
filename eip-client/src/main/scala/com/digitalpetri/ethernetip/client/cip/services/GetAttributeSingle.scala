@@ -19,8 +19,9 @@
 package com.digitalpetri.ethernetip.client.cip.services
 
 import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
-import com.digitalpetri.ethernetip.cip.services.GetAttributeSingleService.{GetAttributeSingleResponse, GetAttributeSingleRequest}
+import com.digitalpetri.ethernetip.cip.services.GetAttributeSingleService.GetAttributeSingleResponse
 import com.digitalpetri.ethernetip.cip.{MessageRouterResponse, CipServiceCodes, MessageRouterRequest}
+import com.digitalpetri.ethernetip.client.CipResponseException
 import com.digitalpetri.ethernetip.client.cip.InvokableService
 import io.netty.buffer.{Unpooled, ByteBuf}
 import scala.concurrent.{Promise, Future}
@@ -64,7 +65,7 @@ class GetAttributeSingle(requestPath: PaddedEPath)
         if (response.generalStatus == 0x00) {
           response.data.getOrElse(Unpooled.EMPTY_BUFFER)
         } else {
-          throw new Exception(f"status=0x${response.generalStatus}%02X additional=${response.additionalStatus}")
+          throw new CipResponseException(response.generalStatus, response.additionalStatus)
         }
       case Failure(ex) => throw ex
     }

@@ -3,6 +3,7 @@ package com.digitalpetri.ethernetip.client.cip.services
 import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
 import com.digitalpetri.ethernetip.cip.services.GetAttributeListService.{AttributeRequest, GetAttributeListRequest, GetAttributeListResponse}
 import com.digitalpetri.ethernetip.cip.{CipServiceCodes, MessageRouterResponse, MessageRouterRequest}
+import com.digitalpetri.ethernetip.client.CipResponseException
 import com.digitalpetri.ethernetip.client.cip.InvokableService
 import io.netty.buffer.{Unpooled, ByteBuf}
 import scala.concurrent.{Promise, Future}
@@ -49,7 +50,7 @@ class GetAttributeList(attributes: Seq[AttributeRequest],
         if (response.generalStatus == 0x00) {
           response.data.getOrElse(Unpooled.EMPTY_BUFFER)
         } else {
-          throw new Exception(s"status=${response.generalStatus} additional=${response.additionalStatus}")
+          throw new CipResponseException(response.generalStatus, response.additionalStatus)
         }
       case Failure(ex) => throw ex
     }
