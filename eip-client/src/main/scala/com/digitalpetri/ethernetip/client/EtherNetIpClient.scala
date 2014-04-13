@@ -123,7 +123,6 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
   }
 
   def sendData(command: SendRRData): Future[SendRRData] = {
-    // TODO This should be caller-runs since it probably contains a retained ByteBuf
     implicit val ec = config.executionContext
 
     val promise = Promise[SendRRData]()

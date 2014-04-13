@@ -19,6 +19,7 @@
 package com.digitalpetri.ethernetip.encapsulation
 
 import com.digitalpetri.ethernetip.encapsulation.commands._
+import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 import scala.Some
 import scala.util.Try
@@ -55,7 +56,7 @@ case class EncapsulationPacket(commandCode: Int,
 
 object EncapsulationPacket {
 
-  def encode(packet: EncapsulationPacket, buffer: ByteBuf) {
+  def encode(packet: EncapsulationPacket, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
     buffer.writeShort(packet.commandCode)
 
     // Length placeholder...

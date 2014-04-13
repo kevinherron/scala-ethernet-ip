@@ -63,7 +63,13 @@ object ConnectedDataItem {
 
     assert(typeId == TypeId)
 
-    ConnectedDataItem(buffer.readSlice(length))
+    // ConnectedDataItem and UnconnectedDataItem are a special case; they use copy() instead of slice() because both
+    // are decoded on the event loop and will have their buffers auto-released as soon as decoding has finished.
+    val index = buffer.readerIndex()
+    val data  = buffer.copy(index, length)
+    buffer.readerIndex(index + length)
+
+    ConnectedDataItem(data)
   }
 
 }

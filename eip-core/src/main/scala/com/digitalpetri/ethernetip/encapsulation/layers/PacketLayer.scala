@@ -19,8 +19,6 @@
 package com.digitalpetri.ethernetip.encapsulation.layers
 
 import com.digitalpetri.ethernetip.encapsulation.EncapsulationPacket
-import com.digitalpetri.ethernetip.encapsulation.commands.{SendRRData, SendUnitData}
-import com.digitalpetri.ethernetip.encapsulation.cpf.items.{UnconnectedDataItem, ConnectedDataItem}
 import com.typesafe.scalalogging.slf4j.Logging
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
@@ -47,7 +45,6 @@ class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with Logging {
 
       EncapsulationPacket.decode(buffer) match {
         case Success(packet) =>
-          maybeRetainBuffer(ctx, packet)
           out.add(packet)
 
         case Failure(ex) =>
@@ -64,35 +61,6 @@ class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with Logging {
 
   private def getLength(in: ByteBuf, startIndex: Int): Int = {
     in.order(ByteOrder.LITTLE_ENDIAN).getUnsignedShort(startIndex + PacketLayer.LengthOffset)
-  }
-
-  private final def maybeRetainBuffer(ctx: ChannelHandlerContext, packet: EncapsulationPacket) {
-    val items = packet.data match {
-      case Some(cmd: SendRRData)    => Some(cmd.packet.items)
-      case Some(cmd: SendUnitData)  => Some(cmd.packet.items)
-      case _ => None
-    }
-
-    items match {
-      case Some(is) =>
-        for (item <- is) {
-          item match {
-            case di: ConnectedDataItem    => retainAndRelease(di.data)
-            case di: UnconnectedDataItem  => retainAndRelease(di.data)
-            case _ => // Other CpfItem types don't contain un-decoded buffers.
-          }
-        }
-      case None => // No CpfItems, no chance for sliced buffers propagating to the upper layers.
-    }
-
-    def retainAndRelease(buffer: ByteBuf) {
-      buffer.retain()
-      ctx.executor().execute(new ReleaseBuffer(buffer))
-    }
-  }
-
-  private final class ReleaseBuffer(buffer: ByteBuf) extends Runnable {
-    def run() { buffer.release() }
   }
 
 }
