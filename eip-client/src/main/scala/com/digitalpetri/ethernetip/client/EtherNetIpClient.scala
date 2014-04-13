@@ -18,9 +18,11 @@
 
 package com.digitalpetri.ethernetip.client
 
+import com.digitalpetri.ethernetip.client.util.ChannelManager
 import com.digitalpetri.ethernetip.encapsulation.EncapsulationPacket
 import com.digitalpetri.ethernetip.encapsulation.commands._
 import com.digitalpetri.ethernetip.encapsulation.layers.PacketReceiver
+import com.typesafe.scalalogging.slf4j.Logging
 import io.netty.channel.{ChannelFuture, ChannelFutureListener, Channel}
 import io.netty.util.{Timeout, TimerTask}
 import java.util.concurrent.atomic.AtomicLong
@@ -29,9 +31,8 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Promise, Future}
 import scala.util.Failure
 import scala.util.Success
-import com.digitalpetri.ethernetip.client.util.ChannelManager
 
-class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver {
+class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver with Logging {
 
   val channelManager = new ChannelManager(this, config)
 
@@ -230,7 +231,7 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver {
       case _ =>
         pendingPackets.remove(packet.senderContext) match {
           case Some(promise) => promise.success(packet)
-          case None => // TODO
+          case None => logger.error(s"No pending packet for senderContext=$senderContext")
         }
     }
   }

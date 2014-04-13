@@ -19,13 +19,16 @@
 package com.digitalpetri.ethernetip.cip.services
 
 import com.digitalpetri.ethernetip.util.Buffers
-import io.netty.buffer.ByteBuf
+import io.netty.buffer.{ByteBufUtil, ByteBuf}
 import scala.util.Try
 
 object GetAttributeSingleService {
 
   case class GetAttributeSingleRequest(attributeId: Int)
-  case class GetAttributeSingleResponse(attributeData: ByteBuf)
+
+  case class GetAttributeSingleResponse(attributeData: ByteBuf) {
+    override def toString: String = s"$productPrefix(${ByteBufUtil.hexDump(attributeData)})"
+  }
 
   object GetAttributeSingleRequest {
     def encode(request: GetAttributeSingleRequest, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {

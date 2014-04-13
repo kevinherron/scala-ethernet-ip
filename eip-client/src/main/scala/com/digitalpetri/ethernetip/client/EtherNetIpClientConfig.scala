@@ -27,7 +27,7 @@ import scala.concurrent.duration.{FiniteDuration, Duration}
 
 case class EtherNetIpClientConfig(host: String,
                                   port: Int = 44818,
-                                  connectionPath: PaddedEPath = PaddedEPath(), // TODO
+                                  connectionPath: PaddedEPath,
                                   timeout: Duration = FiniteDuration(5, TimeUnit.SECONDS),
                                   executionContext: ExecutionContext = ExecutionContext.global,
                                   eventLoop: EventLoopGroup = EtherNetIp.SharedEventLoop,

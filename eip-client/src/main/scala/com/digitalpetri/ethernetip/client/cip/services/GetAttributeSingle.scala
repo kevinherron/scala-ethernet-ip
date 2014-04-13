@@ -26,7 +26,7 @@ import io.netty.buffer.{Unpooled, ByteBuf}
 import scala.concurrent.{Promise, Future}
 import scala.util.{Failure, Success, Try}
 
-class GetAttributeSingle(request: GetAttributeSingleRequest, requestPath: PaddedEPath)
+class GetAttributeSingle(requestPath: PaddedEPath)
   extends InvokableService[GetAttributeSingleResponse] {
 
   private val promise = Promise[GetAttributeSingleResponse]()
@@ -37,7 +37,7 @@ class GetAttributeSingle(request: GetAttributeSingleRequest, requestPath: Padded
     val routerRequest = MessageRouterRequest(
       serviceCode = CipServiceCodes.GetAttributeSingle,
       requestPath = requestPath,
-      requestData = GetAttributeSingleRequest.encode(request))
+      requestData = Unpooled.EMPTY_BUFFER)
 
     MessageRouterRequest.encode(routerRequest)
   }
@@ -64,7 +64,7 @@ class GetAttributeSingle(request: GetAttributeSingleRequest, requestPath: Padded
         if (response.generalStatus == 0x00) {
           response.data.getOrElse(Unpooled.EMPTY_BUFFER)
         } else {
-          throw new Exception(s"status=${response.generalStatus} additional=${response.additionalStatus}")
+          throw new Exception(f"status=0x${response.generalStatus}%02X additional=${response.additionalStatus}")
         }
       case Failure(ex) => throw ex
     }
