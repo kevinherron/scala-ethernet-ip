@@ -33,7 +33,7 @@
     <dependencies>
         <dependency>
             <groupId>com.digitalpetri.eip</groupId>
-            <artifactId>eip-core</artifactId>
+            <artifactId>enip-core</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
