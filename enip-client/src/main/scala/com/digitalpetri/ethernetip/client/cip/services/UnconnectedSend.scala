@@ -38,7 +38,7 @@ class UnconnectedSend(request: UnconnectedSendRequest) extends InvokableService[
     val routerRequest = MessageRouterRequest(
       serviceCode = UnconnectedSend.ServiceCode,
       requestPath = UnconnectedSend.ConnectionManagerPath,
-      requestData = encode(request))
+      requestData = UnconnectedSendRequest.encode(request))
 
     MessageRouterRequest.encode(routerRequest)
   }
@@ -53,69 +53,6 @@ class UnconnectedSend(request: UnconnectedSendRequest) extends InvokableService[
   }
 
   def setResponseFailure(ex: Throwable): Unit = promise.failure(ex)
-
-  private def encode(request: UnconnectedSendRequest, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
-    val priorityAndTimeoutBytes = TimeoutCalculator.calculateTimeoutBytes(request.timeout)
-
-    // priority/timeTick & timeoutTicks
-    buffer.writeByte(priorityAndTimeoutBytes >> 8 & 0xFF)
-    buffer.writeByte(priorityAndTimeoutBytes >> 0 & 0xFF)
-
-    // message length + message
-    val bytesWritten = encodeEmbeddedMessage(request, buffer)
-
-    // pad byte if length was odd
-    if (bytesWritten % 2 != 0) buffer.writeByte(0x00)
-
-    // path length + reserved + path
-    encodeConnectionPath(request, buffer)
-
-    buffer
-  }
-
-  private def encodeEmbeddedMessage(request: UnconnectedSendRequest, buffer: ByteBuf): Int = {
-    // length of embedded message
-    val lengthStartIndex = buffer.writerIndex()
-    buffer.writeShort(0)
-
-    // embedded message
-    val messageStartIndex = buffer.writerIndex()
-    buffer.writeBytes(request.embeddedRequest)
-
-    // go back and update length
-    val bytesWritten = buffer.writerIndex() - messageStartIndex
-    buffer.markWriterIndex()
-    buffer.writerIndex(lengthStartIndex)
-    buffer.writeShort(bytesWritten)
-    buffer.resetWriterIndex()
-
-    bytesWritten
-  }
-
-  private def encodeConnectionPath(request: UnconnectedSendRequest, buffer: ByteBuf) {
-    // connectionPath length
-    val pathLengthStartIndex = buffer.writerIndex()
-    buffer.writeByte(0)
-
-    // reserved byte
-    buffer.writeByte(0x00)
-
-    // encode the path segments...
-    val pathDataStartIndex = buffer.writerIndex()
-
-    request.connectionPath.segments.foreach {
-      case s: LogicalSegment[_] => LogicalSegment.encode(s, padded = true, buffer)
-      case s: PortSegment       => PortSegment.encode(s, buffer)
-    }
-
-    // go back and update the length.
-    val pathBytesWritten = buffer.writerIndex() - pathDataStartIndex
-    val wordsWritten = pathBytesWritten / 2
-    buffer.markWriterIndex()
-    buffer.writerIndex(pathLengthStartIndex)
-    buffer.writeByte(wordsWritten.asInstanceOf[Byte])
-    buffer.resetWriterIndex()
-  }
 
   private def decode(buffer: ByteBuf): Try[ByteBuf] = {
     Success(buffer) // TODO
@@ -132,6 +69,74 @@ object UnconnectedSend {
     InstanceId(0x01))
 
   case class UnconnectedSendRequest(timeout: Duration, embeddedRequest: ByteBuf, connectionPath: PaddedEPath)
+
   case class UnconnectedSendResponse(data: ByteBuf)
+
+  object UnconnectedSendRequest {
+
+    def encode(request: UnconnectedSendRequest, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
+      val priorityAndTimeoutBytes = TimeoutCalculator.calculateTimeoutBytes(request.timeout)
+
+      // priority/timeTick & timeoutTicks
+      buffer.writeByte(priorityAndTimeoutBytes >> 8 & 0xFF)
+      buffer.writeByte(priorityAndTimeoutBytes >> 0 & 0xFF)
+
+      // message length + message
+      val bytesWritten = encodeEmbeddedMessage(request, buffer)
+
+      // pad byte if length was odd
+      if (bytesWritten % 2 != 0) buffer.writeByte(0x00)
+
+      // path length + reserved + path
+      encodeConnectionPath(request, buffer)
+
+      buffer
+    }
+
+    private def encodeEmbeddedMessage(request: UnconnectedSendRequest, buffer: ByteBuf): Int = {
+      // length of embedded message
+      val lengthStartIndex = buffer.writerIndex()
+      buffer.writeShort(0)
+
+      // embedded message
+      val messageStartIndex = buffer.writerIndex()
+      buffer.writeBytes(request.embeddedRequest)
+
+      // go back and update length
+      val bytesWritten = buffer.writerIndex() - messageStartIndex
+      buffer.markWriterIndex()
+      buffer.writerIndex(lengthStartIndex)
+      buffer.writeShort(bytesWritten)
+      buffer.resetWriterIndex()
+
+      bytesWritten
+    }
+
+    private def encodeConnectionPath(request: UnconnectedSendRequest, buffer: ByteBuf) {
+      // connectionPath length
+      val pathLengthStartIndex = buffer.writerIndex()
+      buffer.writeByte(0)
+
+      // reserved byte
+      buffer.writeByte(0x00)
+
+      // encode the path segments...
+      val pathDataStartIndex = buffer.writerIndex()
+
+      request.connectionPath.segments.foreach {
+        case s: LogicalSegment[_] => LogicalSegment.encode(s, padded = true, buffer)
+        case s: PortSegment       => PortSegment.encode(s, buffer)
+      }
+
+      // go back and update the length.
+      val pathBytesWritten = buffer.writerIndex() - pathDataStartIndex
+      val wordsWritten = pathBytesWritten / 2
+      buffer.markWriterIndex()
+      buffer.writerIndex(pathLengthStartIndex)
+      buffer.writeByte(wordsWritten.asInstanceOf[Byte])
+      buffer.resetWriterIndex()
+    }
+
+  }
 
 }

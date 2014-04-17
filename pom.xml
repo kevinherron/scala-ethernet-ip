@@ -23,13 +23,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.digitalpetri.eip</groupId>
-    <artifactId>eip-parent</artifactId>
+    <artifactId>enip-parent</artifactId>
     <packaging>pom</packaging>
     <version>0.1.0-SNAPSHOT</version>
 
     <modules>
-        <module>eip-client</module>
-        <module>eip-core</module>
+        <module>enip-client</module>
+        <module>enip-core</module>
     </modules>
 
     <properties>
