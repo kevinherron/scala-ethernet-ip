@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.digitalpetri.ethernetip.client.util
+package com.digitalpetri.ethernetip.util
 
 import scala.concurrent.duration.Duration
 

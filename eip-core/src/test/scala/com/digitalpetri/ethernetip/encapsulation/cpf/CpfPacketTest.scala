@@ -18,9 +18,9 @@
 
 package com.digitalpetri.ethernetip.encapsulation.cpf
 
-import org.scalatest.FunSuite
 import com.digitalpetri.ethernetip.encapsulation.cpf.items.{UnconnectedDataItem, NullAddressItem}
 import com.digitalpetri.ethernetip.util.Buffers
+import org.scalatest.FunSuite
 
 class CpfPacketTest extends FunSuite {
 
@@ -31,6 +31,18 @@ class CpfPacketTest extends FunSuite {
     buffer.readerIndex(0)
 
     assert (packet == decoded)
+  }
+
+  test("Decoding CpfPacket containing an unrecognized item throws exception") {
+    val packet = CpfPacket(Seq(NullAddressItem()))
+    val buffer = CpfPacket.encode(packet)
+
+    // Judo chop the typeId bytes.
+    buffer.setShort(2, 42)
+
+    intercept[Exception] {
+      CpfPacket.decode(buffer)
+    }
   }
 
 }

@@ -18,35 +18,22 @@
 
 package com.digitalpetri.ethernetip.client.cip.services
 
-import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
-import com.digitalpetri.ethernetip.cip.services.GetAttributeSingleService.GetAttributeSingleResponse
-import com.digitalpetri.ethernetip.cip.{MessageRouterResponse, CipServiceCodes, MessageRouterRequest}
-import com.digitalpetri.ethernetip.client.CipResponseException
-import com.digitalpetri.ethernetip.client.cip.InvokableService
+import com.digitalpetri.ethernetip.cip.structs.MessageRouterResponse
+import com.digitalpetri.ethernetip.client.cip.CipResponseException
 import io.netty.buffer.{Unpooled, ByteBuf}
-import scala.concurrent.{Promise, Future}
+import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-class GetAttributeSingle(requestPath: PaddedEPath)
-  extends InvokableService[GetAttributeSingleResponse] {
+abstract class AbstractInvokableService[T] extends InvokableService[T] {
 
-  private val promise = Promise[GetAttributeSingleResponse]()
+  protected val promise = Promise[T]()
 
-  def response: Future[GetAttributeSingleResponse] = promise.future
-
-  def getRequestData: ByteBuf = {
-    val routerRequest = MessageRouterRequest(
-      serviceCode = CipServiceCodes.GetAttributeSingle,
-      requestPath = requestPath,
-      requestData = Unpooled.EMPTY_BUFFER)
-
-    MessageRouterRequest.encode(routerRequest)
-  }
+  def response: Future[T] = promise.future
 
   def setResponseData(data: ByteBuf): Option[ByteBuf] = {
     val responseTry = for {
       responseData  <- decodeMessageRouterResponse(data)
-      response      <- GetAttributeSingleResponse.decode(responseData)
+      response      <- decodeResponse(responseData)
     } yield response
 
     responseTry match {
@@ -59,7 +46,7 @@ class GetAttributeSingle(requestPath: PaddedEPath)
 
   def setResponseFailure(ex: Throwable): Unit = promise.failure(ex)
 
-  private def decodeMessageRouterResponse(buffer: ByteBuf): Try[ByteBuf] = Try {
+  def decodeMessageRouterResponse(buffer: ByteBuf): Try[ByteBuf] = Try {
     MessageRouterResponse.decode(buffer) match {
       case Success(response) =>
         if (response.generalStatus == 0x00) {
@@ -70,5 +57,12 @@ class GetAttributeSingle(requestPath: PaddedEPath)
       case Failure(ex) => throw ex
     }
   }
+
+  /**
+   * Decode `responseData` and return a response.
+   * @param responseData the [[ByteBuf]] containing the response data.
+   * @return a decoded response.
+   */
+  def decodeResponse(responseData: ByteBuf): Try[T]
 
 }

@@ -2,12 +2,12 @@ package com.digitalpetri.ethernetip.client.cip.services
 
 import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
 import com.digitalpetri.ethernetip.cip.services.GetAttributeListService.{AttributeRequest, GetAttributeListRequest, GetAttributeListResponse}
-import com.digitalpetri.ethernetip.cip.{CipServiceCodes, MessageRouterResponse, MessageRouterRequest}
-import com.digitalpetri.ethernetip.client.CipResponseException
-import com.digitalpetri.ethernetip.client.cip.InvokableService
+import com.digitalpetri.ethernetip.cip.CipServiceCodes
+import com.digitalpetri.ethernetip.client.cip.CipResponseException
 import io.netty.buffer.{Unpooled, ByteBuf}
 import scala.concurrent.{Promise, Future}
 import scala.util.{Success, Failure, Try}
+import com.digitalpetri.ethernetip.cip.structs.{MessageRouterResponse, MessageRouterRequest}
 
 class GetAttributeList(attributes: Seq[AttributeRequest],
                        attributeSizes: Seq[Int],

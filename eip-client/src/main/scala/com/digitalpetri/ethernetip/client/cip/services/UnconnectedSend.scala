@@ -1,11 +1,10 @@
 package com.digitalpetri.ethernetip.client.cip.services
 
+import com.digitalpetri.ethernetip.cip.CipClassCodes
 import com.digitalpetri.ethernetip.cip.epath._
-import com.digitalpetri.ethernetip.cip.{CipClassCodes, MessageRouterRequest}
-import com.digitalpetri.ethernetip.client.cip.InvokableService
+import com.digitalpetri.ethernetip.cip.structs.MessageRouterRequest
 import com.digitalpetri.ethernetip.client.cip.services.UnconnectedSend.UnconnectedSendRequest
-import com.digitalpetri.ethernetip.client.util.TimeoutCalculator
-import com.digitalpetri.ethernetip.util.Buffers
+import com.digitalpetri.ethernetip.util.{TimeoutCalculator, Buffers}
 import io.netty.buffer.ByteBuf
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Promise, Future}

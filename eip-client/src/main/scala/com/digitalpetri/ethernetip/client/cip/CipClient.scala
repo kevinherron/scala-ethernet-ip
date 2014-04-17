@@ -18,7 +18,7 @@
 
 package com.digitalpetri.ethernetip.client.cip
 
-import com.digitalpetri.ethernetip.cip.ConnectedPacket
+import com.digitalpetri.ethernetip.cip.structs.ConnectedPacket
 import com.digitalpetri.ethernetip.client.{EtherNetIpClient, EtherNetIpClientConfig}
 import com.digitalpetri.ethernetip.encapsulation.commands.{SendRRData, SendUnitData}
 import com.digitalpetri.ethernetip.encapsulation.cpf.CpfPacket
@@ -32,9 +32,9 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Promise, Future}
 import scala.util.{Failure, Success}
 
-class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(config) with Logging {
+class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(config) with CipServiceInvoker with Logging {
 
-  implicit val executionContext = config.executionContext
+  private implicit val executionContext = config.executionContext
 
   val pending = new TrieMap[Short, Promise[ByteBuf]]()
   val sequenceNumber = new AtomicInteger(0)

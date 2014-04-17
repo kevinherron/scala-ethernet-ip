@@ -27,11 +27,12 @@ import scala.concurrent.duration.{FiniteDuration, Duration}
 
 case class EtherNetIpClientConfig(host: String,
                                   port: Int = 44818,
-                                  connections: Int = 2,
-                                  connectionPath: PaddedEPath,
                                   vendorId: Int,
                                   serialNumber: Int,
+                                  connections: Int = 2,
+                                  connectionPath: PaddedEPath,
+                                  connectionTimeout: Duration,
                                   timeout: Duration = FiniteDuration(5, TimeUnit.SECONDS),
                                   executionContext: ExecutionContext = ExecutionContext.global,
-                                  eventLoop: EventLoopGroup = EtherNetIp.SharedEventLoop,
-                                  wheelTimer: HashedWheelTimer = EtherNetIp.SharedWheelTimer)
+                                  eventLoop: EventLoopGroup = EtherNetIpShared.SharedEventLoop,
+                                  wheelTimer: HashedWheelTimer = EtherNetIpShared.SharedWheelTimer)

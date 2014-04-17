@@ -1,65 +1,101 @@
 package com.digitalpetri.ethernetip.client.cip
 
-import com.digitalpetri.ethernetip.cip.CipConnection
-import com.digitalpetri.ethernetip.client.cip.services.UnconnectedSend
+import com.digitalpetri.ethernetip.client.cip.services.MultipleServicePacket.MultipleServicePacketRequest
 import com.digitalpetri.ethernetip.client.cip.services.UnconnectedSend.UnconnectedSendRequest
+import com.digitalpetri.ethernetip.client.cip.services.{InvokableService, MultipleServicePacket, UnconnectedSend}
 import io.netty.buffer.ByteBuf
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-trait CipServiceInvoker {
+trait CipServiceInvoker extends CipConnectionManager {
   this: CipClient =>
 
-  def invokeService[T](service: InvokableService[T], connection: Option[CipConnection] = None): Future[T] = {
-    connection match {
-      case Some(c) =>
-        /*
-         * Connected Explicit Message
-         */
+  private implicit val executionContext = config.executionContext
 
-        sendConnectedData(service.getRequestData, c.o2tConnectionId).onComplete {
-          case Success(responseData) =>
-            service.setResponseData(responseData).map(sendConnectedData(_, c.o2tConnectionId))
-
-          case Failure(ex) =>
-            service.setResponseFailure(ex)
-        }
-
-      case None =>
-        /*
-         * Unconnected Explicit Message
-         */
-
-        def sendRequestData(requestData: ByteBuf) {
-          val request = UnconnectedSendRequest(
-            timeout         = config.timeout,
-            embeddedRequest = requestData,
-            connectionPath  = config.connectionPath)
-
-          val unconnectedService = new UnconnectedSend(request)
-
-          unconnectedService.response.onComplete {
+  def invokeService[T](service: InvokableService[T], connected: Boolean = false): Future[T] = {
+    if (connected) {
+      /*
+       * Connected Explicit Message
+       */
+      takeConnection().onComplete {
+        case Success(connection) =>
+          sendConnectedData(service.getRequestData, connection.o2tConnectionId).onComplete {
             case Success(responseData) =>
-              service.setResponseData(responseData).map(sendRequestData)
+              service.setResponseData(responseData) match {
+                case Some(d) => sendConnectedData(d, connection.o2tConnectionId)
+                case None => releaseConnection(connection)
+              }
 
             case Failure(ex) =>
               service.setResponseFailure(ex)
           }
 
-          sendUnconnectedData(unconnectedService.getRequestData).onComplete {
-            case Success(responseData) => unconnectedService.setResponseData(responseData)
-            case Failure(ex) => unconnectedService.setResponseFailure(ex)
-          }
+        case Failure(ex) => service.setResponseFailure(ex)
+      }
+    } else {
+      /*
+       * Unconnected Explicit Message
+       */
+      def sendRequestData(requestData: ByteBuf) {
+        val request = UnconnectedSendRequest(
+          timeout         = config.timeout,
+          embeddedRequest = requestData,
+          connectionPath  = config.connectionPath)
+
+        val unconnectedService = new UnconnectedSend(request)
+
+        unconnectedService.response.onComplete {
+          case Success(responseData) =>
+            service.setResponseData(responseData).map(sendRequestData)
+
+          case Failure(ex) =>
+            service.setResponseFailure(ex)
         }
 
-        sendRequestData(service.getRequestData)
+        sendUnconnectedData(unconnectedService.getRequestData).onComplete {
+          case Success(responseData) => unconnectedService.setResponseData(responseData)
+          case Failure(ex) => unconnectedService.setResponseFailure(ex)
+        }
+      }
+
+      sendRequestData(service.getRequestData)
     }
 
     service.response
   }
 
   def invokeMultiple(services: Seq[InvokableService[_]], connection: Option[CipConnection]) {
+    def invoke(services: Seq[InvokableService[_]], requests: Seq[ByteBuf]) {
+      assert(services.size == requests.size)
 
+      if (services.isEmpty || requests.isEmpty) return
+
+      val service = new MultipleServicePacket(MultipleServicePacketRequest(requests))
+
+      service.response.onComplete {
+        case Success(response) =>
+          val incomplete = services.zip(response.responses).flatMap {
+            case (s, d) => s.setResponseData(d).map(next => (s, next))
+          }
+
+          /*
+           * If any of the services need more data sent pack them together into another MultipleServicePacket and
+           * keep sending again until no services need more data.
+           */
+          if (incomplete.nonEmpty) {
+            val nextServices = incomplete.map(_._1)
+            val nextRequests = incomplete.map(_._2)
+
+            invoke(nextServices, nextRequests)
+          }
+
+        case Failure(ex) => services.foreach(_.setResponseFailure(ex))
+      }
+
+      invokeService(service, connection.isDefined)
+    }
+
+    invoke(services, services.map(_.getRequestData))
   }
 
 }

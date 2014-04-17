@@ -1,4 +1,4 @@
-package com.digitalpetri.ethernetip.cip
+package com.digitalpetri.ethernetip.cip.structs
 
 import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
 import com.digitalpetri.ethernetip.util.Buffers
@@ -70,7 +70,8 @@ object MessageRouterResponse {
     val additionalStatus = decodeAdditionalStatus(List.empty, buffer.readUnsignedByte())
 
     val data: Option[ByteBuf] = {
-      if (generalStatus != 0x00) None
+      // TODO Is this ok, or should we only read when status is 0x00 or 0x06?
+      if (buffer.readableBytes() == 0) None
       else Some(buffer.readSlice(buffer.readableBytes()))
     }
 

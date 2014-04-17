@@ -1,4 +1,4 @@
-package com.digitalpetri.ethernetip.cip
+package com.digitalpetri.ethernetip.cip.structs
 
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf

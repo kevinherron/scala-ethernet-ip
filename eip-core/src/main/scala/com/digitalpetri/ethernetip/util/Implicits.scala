@@ -16,15 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.digitalpetri.ethernetip.client
+package com.digitalpetri.ethernetip.util
 
-class CipResponseException(val status: Short, val additionalStatus: Seq[Short]) extends Exception {
-
-  override def getMessage: String = {
-    val statusString = f"0x$status%02X"
-    val additionalStatusString = additionalStatus.map(status => f"0x$status%02X").mkString("[", ",", "]")
-
-    s"status=$statusString, additional=$additionalStatusString"
+object Implicits {
+  
+  /**
+   * Lets you write things like:
+   *      { val someVal = func(); log.info(someVal); someVal }
+   * as:  { func() tap log.info }
+   */
+  implicit class KestrelCombinator[A](val a: A) extends AnyVal {
+    def withSideEffect(fun: A => Unit): A = { fun(a); a }
+    def tap(fun: A => Unit): A = withSideEffect(fun)
   }
-
+  
 }
