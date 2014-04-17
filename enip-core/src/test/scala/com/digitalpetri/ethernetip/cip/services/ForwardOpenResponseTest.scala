@@ -19,7 +19,7 @@ class ForwardOpenResponseTest extends FunSuite {
       reserved = 7,
       applicationReply = Unpooled.EMPTY_BUFFER)
 
-    val decoded = ForwardOpenResponse.decode(ForwardOpenResponse.encode(response))
+    val decoded = ForwardOpenResponse.decode(ForwardOpenResponse.encode(response)).getOrElse(null)
 
     assert(response == decoded)
   }
