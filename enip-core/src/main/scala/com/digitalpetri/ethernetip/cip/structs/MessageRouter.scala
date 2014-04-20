@@ -46,13 +46,15 @@ case class MessageRouterResponse(serviceCode: Int,
 
 object MessageRouterResponse {
 
-  def encode(response: MessageRouterResponse, buffer: ByteBuf) {
-    buffer.writeShort(response.serviceCode)
+  def encode(response: MessageRouterResponse, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
+    buffer.writeByte(response.serviceCode)
     buffer.writeByte(0x00)
     buffer.writeByte(response.generalStatus)
     buffer.writeByte(response.additionalStatus.size)
     response.additionalStatus.foreach(s => buffer.writeShort(s))
     response.data.foreach(buffer.writeBytes)
+
+    buffer
   }
 
   def decode(buffer: ByteBuf): Try[MessageRouterResponse] = Try {

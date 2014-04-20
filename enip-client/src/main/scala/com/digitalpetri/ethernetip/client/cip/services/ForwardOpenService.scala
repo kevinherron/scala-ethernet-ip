@@ -18,20 +18,27 @@
 
 package com.digitalpetri.ethernetip.client.cip.services
 
-import com.digitalpetri.ethernetip.cip.CipServiceCodes
-import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
-import com.digitalpetri.ethernetip.cip.services.GetAttributeSingleService.GetAttributeSingleResponse
+import com.digitalpetri.ethernetip.cip.CipClassCodes
+import com.digitalpetri.ethernetip.cip.epath.{InstanceId, ClassId, PaddedEPath}
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.{ForwardOpenRequest, ForwardOpenResponse}
 import com.digitalpetri.ethernetip.cip.structs.MessageRouterRequest
-import io.netty.buffer.{Unpooled, ByteBuf}
-import scala.util.Try
+import com.digitalpetri.ethernetip.client.cip.CipResponseException
+import io.netty.buffer.ByteBuf
+import scala.concurrent.Future
+import scala.util.{Failure, Try}
 
-class GetAttributeSingle(requestPath: PaddedEPath) extends AbstractInvokableService[GetAttributeSingleResponse] {
+class ForwardOpenService(request: ForwardOpenRequest) extends AbstractInvokableService[ForwardOpenResponse] {
+
+  private val requestPath = PaddedEPath(
+    ClassId(CipClassCodes.ConnectionManagerObject),
+    InstanceId(0x01))
 
   def getRequestData: ByteBuf = {
     val routerRequest = MessageRouterRequest(
-      serviceCode = CipServiceCodes.GetAttributeSingle,
+      serviceCode = ForwardOpen.ServiceCode,
       requestPath = requestPath,
-      requestData = Unpooled.EMPTY_BUFFER)
+      requestData = ForwardOpenRequest.encode(request))
 
     MessageRouterRequest.encode(routerRequest)
   }
@@ -41,8 +48,8 @@ class GetAttributeSingle(requestPath: PaddedEPath) extends AbstractInvokableServ
    * @param responseData the [[ByteBuf]] containing the response data.
    * @return a decoded response.
    */
-  override def decodeResponse(responseData: ByteBuf): Try[GetAttributeSingleResponse] = {
-    GetAttributeSingleResponse.decode(responseData)
+  def decodeResponse(responseData: ByteBuf): Try[ForwardOpenResponse] = {
+    ForwardOpenResponse.decode(responseData)
   }
 
 }

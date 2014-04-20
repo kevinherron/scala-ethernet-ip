@@ -20,9 +20,9 @@ package com.digitalpetri.ethernetip.cip.services
 
 import com.digitalpetri.ethernetip.cip.CipClassCodes
 import com.digitalpetri.ethernetip.cip.epath.{ConnectionPoint, InstanceId, ClassId, PaddedEPath}
-import com.digitalpetri.ethernetip.cip.services.ForwardOpenService.NetworkConnectionParameters.ConnectionType._
-import com.digitalpetri.ethernetip.cip.services.ForwardOpenService.NetworkConnectionParameters.Priority._
-import com.digitalpetri.ethernetip.cip.services.ForwardOpenService.NetworkConnectionParameters.Size.{VariableSize, FixedSize, Size}
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.ConnectionType._
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Priority._
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Size.{VariableSize, FixedSize, Size}
 import com.digitalpetri.ethernetip.util.{TimeoutCalculator, Buffers}
 import io.netty.buffer.{Unpooled, ByteBuf}
 import java.util.concurrent.TimeUnit
@@ -31,7 +31,7 @@ import scala.concurrent.duration.Duration
 import scala.util.Try
 
 
-object ForwardOpenService {
+object ForwardOpen {
 
   val ServiceCode = 0x54
 
@@ -124,7 +124,7 @@ object ForwardOpenService {
 
       val connectionPath = PaddedEPath.decode(buffer)
 
-      ForwardOpenService.ForwardOpenRequest(
+      ForwardOpen.ForwardOpenRequest(
         timeout,
         o2tConnectionId,
         t2oConnectionId,
@@ -206,8 +206,8 @@ object ForwardOpenService {
   val DefaultConnectionTimeoutMultiplier = 0x01
 
   /**
-   * 2 seconds. Used when connecting to a server endpoint, it is to combined with the Connection Timeout Multiplier
-   * parameter to create an inactivity timeout for the connection.
+   * 2 seconds. When connecting to a server endpoint, it is used with the Connection Timeout Multiplier parameter to
+   * derive an inactivity timeout for the connection.
    */
   val DefaultRpi = Duration(2, TimeUnit.SECONDS)
 

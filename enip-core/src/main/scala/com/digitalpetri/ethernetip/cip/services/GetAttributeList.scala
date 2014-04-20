@@ -22,7 +22,7 @@ import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 import scala.util.Try
 
-object GetAttributeListService {
+object GetAttributeList {
 
   case class GetAttributeListRequest(attributes: Seq[AttributeRequest])
   case class GetAttributeListResponse(attributes: Seq[AttributeResponse])

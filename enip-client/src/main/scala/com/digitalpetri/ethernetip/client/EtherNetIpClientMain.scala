@@ -20,9 +20,9 @@ package com.digitalpetri.ethernetip.client
 
 import com.digitalpetri.ethernetip.cip.CipClassCodes
 import com.digitalpetri.ethernetip.cip.epath._
-import com.digitalpetri.ethernetip.cip.services.GetAttributeListService.AttributeRequest
+import com.digitalpetri.ethernetip.cip.services.GetAttributeList.AttributeRequest
 import com.digitalpetri.ethernetip.client.cip.CipClient
-import com.digitalpetri.ethernetip.client.cip.services.{GetAttributeSingle, GetAttributeList}
+import com.digitalpetri.ethernetip.client.cip.services.{GetAttributeSingleService, GetAttributeListService}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
@@ -39,7 +39,7 @@ object EtherNetIpClientMain extends App {
     serialNumber = 0,
     connections = 2,
     connectionPath = PaddedEPath(PortSegment(1, Array[Byte](0))),
-    connectionTimeout = Duration(5, TimeUnit.SECONDS))
+    connectionTimeout = Duration(15, TimeUnit.SECONDS))
 
   val client = new CipClient(config)
 
@@ -67,7 +67,7 @@ object EtherNetIpClientMain extends App {
 //  }
 
   def testGetAttributeList() {
-    val service = new GetAttributeList(
+    val service = new GetAttributeListService(
       attributes      = Seq(AttributeRequest(id = 1)),
       attributeSizes  = Seq(2),
       requestPath     = PaddedEPath(ClassId(CipClassCodes.MessageRouterObject), InstanceId(0x01)))
@@ -86,7 +86,7 @@ object EtherNetIpClientMain extends App {
       InstanceId(0x01),
       AttributeId(1))
 
-    val service = new GetAttributeSingle(requestPath)
+    val service = new GetAttributeSingleService(requestPath)
 
     val serviceFuture = client.invokeService(service, connected = true)
 

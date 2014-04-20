@@ -1,13 +1,13 @@
 package com.digitalpetri.ethernetip.client.cip.services
 
-import com.digitalpetri.ethernetip.cip.epath.{InstanceId, ClassId, PaddedEPath}
+import com.digitalpetri.ethernetip.cip.CipServiceCodes
+import com.digitalpetri.ethernetip.cip.services.MultipleServicePacket
+import com.digitalpetri.ethernetip.cip.services.MultipleServicePacket.{MultipleServicePacketResponse, MultipleServicePacketRequest}
 import com.digitalpetri.ethernetip.cip.structs.MessageRouterRequest
-import com.digitalpetri.ethernetip.cip.{CipClassCodes, CipServiceCodes}
-import com.digitalpetri.ethernetip.client.cip.services.MultipleServicePacket.{MultipleServicePacketResponse, MultipleServicePacketRequest}
 import io.netty.buffer.ByteBuf
 import scala.concurrent.{Promise, Future}
 
-class MultipleServicePacket(request: MultipleServicePacketRequest)
+class MultipleServicePacketService(request: MultipleServicePacketRequest)
   extends InvokableService[MultipleServicePacketResponse] {
 
   private val promise = Promise[MultipleServicePacketResponse]()
@@ -18,7 +18,7 @@ class MultipleServicePacket(request: MultipleServicePacketRequest)
     val routerRequest = MessageRouterRequest(
       serviceCode = CipServiceCodes.MultipleServicePacket,
       requestPath = MultipleServicePacket.RequestPath,
-      requestData = ???)
+      requestData = MultipleServicePacketRequest.encode(request))
 
     MessageRouterRequest.encode(routerRequest)
   }
@@ -29,13 +29,4 @@ class MultipleServicePacket(request: MultipleServicePacketRequest)
 
 }
 
-object MultipleServicePacket {
 
-  val RequestPath = PaddedEPath(
-    ClassId(CipClassCodes.MessageRouterObject),
-    InstanceId(0x01))
-
-  case class MultipleServicePacketRequest(requests: Seq[ByteBuf])
-  case class MultipleServicePacketResponse(responses: Seq[ByteBuf])
-
-}

@@ -89,7 +89,7 @@ class AsyncQueue[T](wheelTimer: HashedWheelTimer, executionContext: ExecutionCon
     }, duration.length, duration.unit)
 
     promise.future.onComplete {
-      case _ => if (!timeout.isCancelled) timeout.cancel()
+      case _ => timeout.cancel()
     }
   }
 

@@ -22,7 +22,7 @@ import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.{ByteBufUtil, ByteBuf}
 import scala.util.Try
 
-object GetAttributeSingleService {
+object GetAttributeSingle {
 
   case class GetAttributeSingleRequest(attributeId: Int)
 

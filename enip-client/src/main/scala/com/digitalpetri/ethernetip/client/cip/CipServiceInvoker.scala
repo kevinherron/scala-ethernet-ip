@@ -1,8 +1,8 @@
 package com.digitalpetri.ethernetip.client.cip
 
-import com.digitalpetri.ethernetip.client.cip.services.MultipleServicePacket.MultipleServicePacketRequest
-import com.digitalpetri.ethernetip.client.cip.services.UnconnectedSend.UnconnectedSendRequest
-import com.digitalpetri.ethernetip.client.cip.services.{InvokableService, MultipleServicePacket, UnconnectedSend}
+import com.digitalpetri.ethernetip.cip.services.MultipleServicePacket.MultipleServicePacketRequest
+import com.digitalpetri.ethernetip.cip.services.UnconnectedSend.UnconnectedSendRequest
+import com.digitalpetri.ethernetip.client.cip.services.{InvokableService, MultipleServicePacketService, UnconnectedSendService}
 import io.netty.buffer.ByteBuf
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -17,7 +17,7 @@ trait CipServiceInvoker extends CipConnectionManager {
       /*
        * Connected Explicit Message
        */
-      takeConnection().onComplete {
+      reserveConnection().onComplete {
         case Success(connection) =>
           sendConnectedData(service.getRequestData, connection.o2tConnectionId).onComplete {
             case Success(responseData) =>
@@ -42,7 +42,7 @@ trait CipServiceInvoker extends CipConnectionManager {
           embeddedRequest = requestData,
           connectionPath  = config.connectionPath)
 
-        val unconnectedService = new UnconnectedSend(request)
+        val unconnectedService = new UnconnectedSendService(request)
 
         unconnectedService.response.onComplete {
           case Success(responseData) =>
@@ -70,7 +70,7 @@ trait CipServiceInvoker extends CipConnectionManager {
 
       if (services.isEmpty || requests.isEmpty) return
 
-      val service = new MultipleServicePacket(MultipleServicePacketRequest(requests))
+      val service = new MultipleServicePacketService(MultipleServicePacketRequest(requests))
 
       service.response.onComplete {
         case Success(response) =>

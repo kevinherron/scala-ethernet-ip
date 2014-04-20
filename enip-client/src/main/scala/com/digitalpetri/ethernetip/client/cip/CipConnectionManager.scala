@@ -19,9 +19,9 @@
 package com.digitalpetri.ethernetip.client.cip
 
 import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
-import com.digitalpetri.ethernetip.cip.services.ForwardOpenService
-import com.digitalpetri.ethernetip.cip.services.ForwardOpenService.ForwardOpenRequest
-import com.digitalpetri.ethernetip.client.cip.services.ForwardOpen
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.ForwardOpenRequest
+import com.digitalpetri.ethernetip.client.cip.services.ForwardOpenService
 import com.digitalpetri.ethernetip.client.util.AsyncQueue
 import com.typesafe.scalalogging.slf4j.Logging
 import io.netty.util.{TimerTask, Timeout}
@@ -43,7 +43,7 @@ trait CipConnectionManager extends Logging {
 
   private val timeouts = new TrieMap[Int, Timeout]()
 
-  def takeConnection(): Future[CipConnection] = {
+  def reserveConnection(): Future[CipConnection] = {
     val promise = Promise[CipConnection]()
 
     val future = queue.poll(Some(config.timeout))
@@ -61,11 +61,12 @@ trait CipConnectionManager extends Logging {
 
     future.onComplete {
       case Success(c) =>
-        if (c.valid) {
+        if (timeouts.contains(c.o2tConnectionId)) {
+          // If `timeouts` contains an entry for this connection then it hasn't timed out.
           promise.success(c)
           logger.info(s"CipConnection taken: $c")
         } else {
-          promise.completeWith(takeConnection())
+          promise.completeWith(reserveConnection())
         }
 
       case Failure(ex) => promise.failure(ex)
@@ -85,7 +86,6 @@ trait CipConnectionManager extends Logging {
       def run(t: Timeout): Unit = {
         timeouts.remove(connection.o2tConnectionId).foreach {
           to =>
-            connection.valid = false
             count.decrementAndGet()
             logger.info(s"CipConnection timed out: $connection")
         }
@@ -100,7 +100,7 @@ trait CipConnectionManager extends Logging {
   private def allocateConnection(): Future[CipConnection] = {
     val promise = Promise[CipConnection]()
 
-    val segments = config.connectionPath.segments ++ ForwardOpenService.MessageRouterConnectionPoint.segments
+    val segments = config.connectionPath.segments ++ ForwardOpen.MessageRouterConnectionPoint.segments
     val connectionPath = PaddedEPath(segments: _*)
 
     val request = ForwardOpenRequest(
@@ -109,10 +109,10 @@ trait CipConnectionManager extends Logging {
       vendorId                = 0,
       vendorSerialNumber      = 0,
       connectionPath          = connectionPath,
-      o2tNetworkConnectionParameters = ForwardOpenService.DefaultExplicitConnectionParameters,
-      t2oNetworkConnectionParameters = ForwardOpenService.DefaultExplicitConnectionParameters)
+      o2tNetworkConnectionParameters = ForwardOpen.DefaultExplicitConnectionParameters,
+      t2oNetworkConnectionParameters = ForwardOpen.DefaultExplicitConnectionParameters)
 
-    val service = new ForwardOpen(request)
+    val service = new ForwardOpenService(request)
 
     sendUnconnectedData(service.getRequestData).onComplete {
       case Success(responseData) => service.setResponseData(responseData)
