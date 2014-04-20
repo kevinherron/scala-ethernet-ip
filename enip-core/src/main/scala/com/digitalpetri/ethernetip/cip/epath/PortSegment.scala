@@ -18,8 +18,8 @@
 
 package com.digitalpetri.ethernetip.cip.epath
 
-import io.netty.buffer.ByteBuf
 import com.digitalpetri.ethernetip.util.Buffers
+import io.netty.buffer.ByteBuf
 
 case class PortSegment(portId: Int, linkAddress: Array[Byte] = Array.emptyByteArray) extends EPathSegment
 
@@ -48,7 +48,23 @@ object PortSegment {
   }
 
   def decode(buffer: ByteBuf): PortSegment = {
-    ??? // TODO
+    val segmentByte = buffer.readUnsignedByte()
+    val extendedLink = ((segmentByte >> 4) & 1) == 1
+
+    val linkSize = {
+      if (extendedLink) buffer.readUnsignedByte()
+      else 1
+    }
+
+    val portId = {
+      if ((segmentByte & 0x0F) == 0x0F) buffer.readUnsignedShort()
+      else segmentByte & 0x0F
+    }
+
+    val linkAddress = new Array[Byte](linkSize)
+    buffer.readBytes(linkAddress)
+
+    PortSegment(portId, linkAddress)
   }
 
 }

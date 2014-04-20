@@ -13,6 +13,18 @@ sealed abstract class EPath {
 
 abstract class EPathSegment
 
+object EPathSegment {
+
+  def encode(segment: EPathSegment, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
+    ??? // TODO
+  }
+
+  def decode(buffer: ByteBuf): EPathSegment = {
+    ??? // TODO
+  }
+
+}
+
 case class PackedEPath(segments: EPathSegment*) extends EPath
 case class PaddedEPath(segments: EPathSegment*) extends EPath
 
@@ -27,6 +39,7 @@ object PackedEPath {
 }
 
 object PaddedEPath {
+
   def encode(path: PaddedEPath, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
     // length placeholder...
     val lengthStartIndex = buffer.writerIndex()
@@ -50,6 +63,17 @@ object PaddedEPath {
   }
 
   def decode(buffer: ByteBuf): PaddedEPath = {
-    ??? // TODO
+    val wordCount = buffer.readUnsignedByte()
+    val byteCount = wordCount * 2
+
+    val dataStartIndex = buffer.readerIndex()
+
+    def decodeSegments(segments: Seq[EPathSegment] = Seq.empty): Seq[EPathSegment] = {
+      if (buffer.readerIndex() >= dataStartIndex + byteCount) segments
+      else decodeSegments(segments :+ EPathSegment.decode(buffer))
+    }
+
+    PaddedEPath(decodeSegments(): _*)
   }
+  
 }
