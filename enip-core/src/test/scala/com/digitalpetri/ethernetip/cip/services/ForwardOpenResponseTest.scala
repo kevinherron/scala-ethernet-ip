@@ -1,6 +1,6 @@
 package com.digitalpetri.ethernetip.cip.services
 
-import com.digitalpetri.ethernetip.cip.services.ForwardOpenService.ForwardOpenResponse
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.ForwardOpenResponse
 import io.netty.buffer.Unpooled
 import org.scalatest.FunSuite
 

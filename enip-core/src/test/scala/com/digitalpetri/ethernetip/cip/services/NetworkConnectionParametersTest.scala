@@ -19,18 +19,18 @@
 package com.digitalpetri.ethernetip.cip.services
 
 import org.scalatest.FunSuite
-import com.digitalpetri.ethernetip.cip.services.ForwardOpenService.NetworkConnectionParameters
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters
 
 class NetworkConnectionParametersTest extends FunSuite {
 
   test("NetworkConnectionParameters implicitly converts to and from Int") {
-    val parameters = ForwardOpenService.DefaultExplicitConnectionParameters
+    val parameters = ForwardOpen.DefaultExplicitConnectionParameters
     assert(parameters == params2int2params(parameters))
 
-    val parameters2 = ForwardOpenService.DefaultO2tIoConnectionParameters
+    val parameters2 = ForwardOpen.DefaultO2tIoConnectionParameters
     assert(parameters2 == params2int2params(parameters2))
 
-    val parameters3 = ForwardOpenService.DefaultT2oIoConnectionParameters
+    val parameters3 = ForwardOpen.DefaultT2oIoConnectionParameters
     assert(parameters3 == parameters3)
   }
 
