@@ -21,14 +21,14 @@ package com.digitalpetri.ethernetip.cip.epath
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 
-sealed abstract class DataSegment
+sealed abstract class DataSegment extends EPathSegment
 
 object DataSegment {
   val SegmentType = 0x80
 }
 
 case class AnsiDataSegment(data: String) extends DataSegment
-case class SimpleDataSegment(data: Seq[Short])
+case class SimpleDataSegment(data: Seq[Short]) extends DataSegment
 
 object AnsiDataSegment {
 

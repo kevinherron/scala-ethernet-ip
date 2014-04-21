@@ -51,6 +51,8 @@ object PaddedEPath {
     path.segments.foreach {
       case s: LogicalSegment[_] => LogicalSegment.encode(s, padded = true, buffer)
       case s: PortSegment       => PortSegment.encode(s, buffer)
+      case s: AnsiDataSegment   => AnsiDataSegment.encode(s, buffer)
+      case s: SimpleDataSegment => SimpleDataSegment.encode(s, buffer)
     }
 
     // go back and update the length

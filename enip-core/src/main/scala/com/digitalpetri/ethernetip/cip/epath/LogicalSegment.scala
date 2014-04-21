@@ -122,7 +122,7 @@ object LogicalSegment {
   }
 
   private def encodeKeySegment(segment: KeySegment, buffer: ByteBuf) {
-
+    // TODO
   }
   
 }
