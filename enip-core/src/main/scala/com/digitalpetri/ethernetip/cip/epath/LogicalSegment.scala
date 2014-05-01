@@ -26,6 +26,11 @@ import com.digitalpetri.ethernetip.cip.epath.LogicalSegment.LogicalType.LogicalT
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 
+/**
+ * The logical segment selects a particular object address within a device (for example, Object Class, Object Instance,
+ * and Object Attribute).
+ * @param logicalType See [[LogicalType]].
+ */
 sealed abstract class LogicalSegment[T](val logicalType: LogicalType) extends EPathSegment {
   def format: LogicalFormat
   def value: T
@@ -61,9 +66,40 @@ object LogicalSegment {
   case class ElectronicKey(vendorId: Int,
                            deviceType: Int,
                            productCode: Int,
-                           majorRevision: Byte,
                            strictMajor: Boolean,
-                           minorRevision: Byte)
+                           majorRevision: Int,
+                           minorRevision: Int)
+
+  object ElectronicKey {
+
+    val KeyFormat = 0x04
+
+    def encode(key: ElectronicKey, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
+      buffer.writeShort(key.vendorId)
+      buffer.writeShort(key.deviceType)
+      buffer.writeShort(key.productCode)
+
+      var majorRevision = if (key.strictMajor) 0x80 else 0x00
+      majorRevision |= (key.majorRevision & 0x7F)
+      buffer.writeByte(majorRevision)
+
+      buffer.writeByte(key.minorRevision)
+    }
+
+    def decode(buffer: ByteBuf): ElectronicKey = {
+      val vendorId = buffer.readUnsignedShort()
+      val deviceType = buffer.readUnsignedShort()
+      val productCode = buffer.readUnsignedShort()
+
+      val majorByte = buffer.readUnsignedByte()
+      val strictMajor = ((majorByte >> 7) & 1) == 1
+      val majorRevision = majorByte & 0x7F
+      val minorRevision = buffer.readUnsignedByte()
+
+      ElectronicKey(vendorId, deviceType, productCode, strictMajor, majorRevision, minorRevision)
+    }
+
+  }
 
   object LogicalType {
     sealed abstract class LogicalType(val typeId: Int)
@@ -122,7 +158,8 @@ object LogicalSegment {
   }
 
   private def encodeKeySegment(segment: KeySegment, buffer: ByteBuf) {
-    // TODO
+    buffer.writeByte(ElectronicKey.KeyFormat)
+    ElectronicKey.encode(segment.value, buffer)
   }
   
 }

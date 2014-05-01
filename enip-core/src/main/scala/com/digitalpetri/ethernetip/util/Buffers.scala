@@ -23,6 +23,8 @@ import java.nio.ByteOrder
 
 object Buffers {
 
+  val EmptyBuffer = Unpooled.EMPTY_BUFFER
+
   def unpooled(): ByteBuf = Unpooled.buffer().order(ByteOrder.LITTLE_ENDIAN)
 
 }
