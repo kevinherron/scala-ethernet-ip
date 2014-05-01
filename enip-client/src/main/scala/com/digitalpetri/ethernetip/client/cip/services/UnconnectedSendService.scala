@@ -3,11 +3,12 @@ package com.digitalpetri.ethernetip.client.cip.services
 import com.digitalpetri.ethernetip.cip.services.UnconnectedSend
 import com.digitalpetri.ethernetip.cip.services.UnconnectedSend.UnconnectedSendRequest
 import com.digitalpetri.ethernetip.cip.structs.MessageRouterRequest
+import com.digitalpetri.ethernetip.util.Implicits.KestrelCombinator
 import io.netty.buffer.ByteBuf
-import scala.util.Try
+import scala.concurrent.{Promise, Future}
 
 /**
- * The Unconnected_Send service shall allow an application to send a message to a device without first setting up a
+  * The Unconnected_Send service shall allow an application to send a message to a device without first setting up a
  * connection.
  *
  * The Unconnected_Send service shall use the Connection Manager object in each intermediate node to forward
@@ -22,7 +23,9 @@ import scala.util.Try
  *
  * @param request a [[UnconnectedSendRequest]]
  */
-class UnconnectedSendService(request: UnconnectedSendRequest) extends AbstractInvokableService[ByteBuf] {
+class UnconnectedSendService(request: UnconnectedSendRequest) extends InvokableService[ByteBuf] {
+
+  private val promise = Promise[ByteBuf]()
 
   def getRequestData: ByteBuf = {
     val routerRequest = MessageRouterRequest(
@@ -33,12 +36,13 @@ class UnconnectedSendService(request: UnconnectedSendRequest) extends AbstractIn
     MessageRouterRequest.encode(routerRequest)
   }
 
-  /**
-   * Decode `responseData` and return a response.
-   * @param responseData the [[ByteBuf]] containing the response data.
-   * @return a decoded response.
-   */
-  def decodeResponse(responseData: ByteBuf): Try[ByteBuf] = Try(responseData)
+  def response: Future[ByteBuf] = promise.future
+
+  def setResponseData(data: ByteBuf): Option[ByteBuf] = {
+    None.tap(_ => promise.success(data))
+  }
+
+  def setResponseFailure(ex: Throwable): Unit = promise.failure(ex)
 
 }
 
