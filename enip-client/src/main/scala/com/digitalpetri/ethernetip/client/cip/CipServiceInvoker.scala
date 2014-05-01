@@ -19,24 +19,29 @@ trait CipServiceInvoker extends CipConnectionManager {
        */
       reserveConnection().onComplete {
         case Success(connection) =>
-          sendConnectedData(service.getRequestData, connection.o2tConnectionId).onComplete {
-            case Success(responseData) =>
-              service.setResponseData(responseData) match {
-                case Some(d) => sendConnectedData(d, connection.o2tConnectionId)
-                case None => releaseConnection(connection)
-              }
+          def _send(requestData: ByteBuf, o2tConnectionId: Int) {
+            sendConnectedData(requestData, connection.o2tConnectionId).onComplete {
+              case Success(responseData) =>
+                service.setResponseData(responseData) match {
+                  case Some(d) => _send(d, connection.o2tConnectionId)
+                  case None => releaseConnection(connection)
+                }
 
-            case Failure(ex) =>
-              service.setResponseFailure(ex)
+              case Failure(ex) =>
+                service.setResponseFailure(ex)
+            }
           }
+
+          _send(service.getRequestData, connection.o2tConnectionId)
 
         case Failure(ex) => service.setResponseFailure(ex)
       }
+
     } else {
       /*
        * Unconnected Explicit Message
        */
-      def sendRequestData(requestData: ByteBuf) {
+      def _send(requestData: ByteBuf) {
         val request = UnconnectedSendRequest(
           timeout         = config.timeout,
           embeddedRequest = requestData,
@@ -46,7 +51,7 @@ trait CipServiceInvoker extends CipConnectionManager {
 
         unconnectedService.response.onComplete {
           case Success(responseData) =>
-            service.setResponseData(responseData).map(sendRequestData)
+            service.setResponseData(responseData).map(_send)
 
           case Failure(ex) =>
             service.setResponseFailure(ex)
@@ -58,13 +63,13 @@ trait CipServiceInvoker extends CipConnectionManager {
         }
       }
 
-      sendRequestData(service.getRequestData)
+      _send(service.getRequestData)
     }
 
     service.response
   }
 
-  def invokeMultiple(services: Seq[InvokableService[_]], connection: Option[CipConnection]) {
+  def invokeMultiple(services: Seq[InvokableService[_]], connected: Boolean) {
     def invoke(services: Seq[InvokableService[_]], requests: Seq[ByteBuf]) {
       assert(services.size == requests.size)
 
@@ -92,7 +97,7 @@ trait CipServiceInvoker extends CipConnectionManager {
         case Failure(ex) => services.foreach(_.setResponseFailure(ex))
       }
 
-      invokeService(service, connection.isDefined)
+      invokeService(service, connected)
     }
 
     invoke(services, services.map(_.getRequestData))
