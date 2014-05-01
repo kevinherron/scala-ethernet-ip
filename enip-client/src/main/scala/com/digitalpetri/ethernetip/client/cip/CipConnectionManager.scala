@@ -63,8 +63,8 @@ trait CipConnectionManager extends Logging {
       case Success(c) =>
         if (timeouts.contains(c.o2tConnectionId)) {
           // If `timeouts` contains an entry for this connection then it hasn't timed out.
+          logger.trace(s"CipConnection taken: $c")
           promise.success(c)
-          logger.info(s"CipConnection taken: $c")
         } else {
           promise.completeWith(reserveConnection())
         }
@@ -76,8 +76,8 @@ trait CipConnectionManager extends Logging {
   }
 
   def releaseConnection(connection: CipConnection) {
-    logger.info(s"CipConnection released: $connection")
-    
+    logger.trace(s"CipConnection released: $connection")
+
     timeouts.remove(connection.o2tConnectionId).foreach(_ => offerConnection(connection))
   }
 
@@ -87,7 +87,7 @@ trait CipConnectionManager extends Logging {
         timeouts.remove(connection.o2tConnectionId).foreach {
           to =>
             count.decrementAndGet()
-            logger.info(s"CipConnection timed out: $connection")
+            logger.debug(s"CipConnection timed out: $connection")
         }
       }
     }, config.connectionTimeout.length, config.connectionTimeout.unit)
@@ -129,7 +129,7 @@ trait CipConnectionManager extends Logging {
           originatorSerialNumber  = response.originatorSerialNumber,
           timeout                 = config.connectionTimeout)
 
-        logger.info(s"CipConnection allocated: $connection")
+        logger.debug(s"CipConnection allocated: $connection")
 
         promise.success(connection)
 
