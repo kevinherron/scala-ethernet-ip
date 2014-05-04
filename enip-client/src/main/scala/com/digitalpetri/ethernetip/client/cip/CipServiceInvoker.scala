@@ -69,17 +69,17 @@ trait CipServiceInvoker extends CipConnectionManager {
     service.response
   }
 
-  def invokeMultiple(services: Seq[InvokableService[_]], connected: Boolean) {
-    def invoke(services: Seq[InvokableService[_]], requests: Seq[ByteBuf]) {
+  def invokeMultiple(services: Seq[InvokableService[_]], connected: Boolean): Future[_] = {
+    def invoke(services: Seq[InvokableService[_]], requests: Seq[ByteBuf]): Future[_] = {
       assert(services.size == requests.size)
 
-      if (services.isEmpty || requests.isEmpty) return
+      if (services.isEmpty || requests.isEmpty) return Future.successful(Unit)
 
       val service = new MultipleServicePacketService(MultipleServicePacketRequest(requests))
 
       service.response.onComplete {
         case Success(response) =>
-          val incomplete = services.zip(response.responses).flatMap {
+          val incomplete = services.zip(response.serviceResponses).flatMap {
             case (s, d) => s.setResponseData(d).map(next => (s, next))
           }
 

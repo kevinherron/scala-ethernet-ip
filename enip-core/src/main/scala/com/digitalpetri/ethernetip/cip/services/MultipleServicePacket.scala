@@ -29,17 +29,42 @@ object MultipleServicePacket {
     ClassId(CipClassCodes.MessageRouterObject),
     InstanceId(0x01))
 
-  case class MultipleServicePacketRequest(requests: Seq[ByteBuf])
-  case class MultipleServicePacketResponse(responses: Seq[ByteBuf])
+  case class MultipleServicePacketRequest(serviceRequests: Seq[ByteBuf])
+  case class MultipleServicePacketResponse(serviceResponses: Seq[ByteBuf])
 
   object MultipleServicePacketRequest {
 
     def encode(request: MultipleServicePacketRequest, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
-      buffer // TODO
+      val serviceRequests = request.serviceRequests
+
+      buffer.writeShort(serviceRequests.length)
+
+      val offsets = serviceRequests.foldLeft(Seq[Int](0 + 2 + 2 * serviceRequests.length)) {
+        (offsets, data) => offsets :+ offsets.last + data.readableBytes()
+      }
+      offsets.dropRight(1).foreach(offset => buffer.writeShort(offset))
+
+      serviceRequests.foreach(buffer.writeBytes)
+
+      buffer
     }
 
     def decode(buffer: ByteBuf): MultipleServicePacketRequest = {
-      ??? // TODO
+      val dataStartIndex  = buffer.readerIndex()
+      val serviceCount    = buffer.readUnsignedShort()
+      val offsets         = for (i <- 0 until serviceCount) yield buffer.readUnsignedShort()
+
+      def slices(offsets: Seq[Int], data: Seq[ByteBuf]): Seq[ByteBuf] = {
+        offsets match {
+          case Seq(offset) =>
+            data :+ sliceAndSkip(buffer, dataStartIndex + offset, buffer.readableBytes())
+
+          case Seq(offset, tail@_*) =>
+            slices(tail, data :+ sliceAndSkip(buffer, dataStartIndex + offset, tail.head - offset))
+        }
+      }
+
+      MultipleServicePacketRequest(slices(offsets, Seq.empty))
     }
 
   }
@@ -47,12 +72,44 @@ object MultipleServicePacket {
   object MultipleServicePacketResponse {
 
     def encode(request: MultipleServicePacketResponse, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
-      buffer // TODO
+      val serviceResponses = request.serviceResponses
+
+      buffer.writeShort(serviceResponses.length)
+
+      val offsets = serviceResponses.foldLeft(Seq[Int](0 + 2 + 2 * serviceResponses.length)) {
+        (offsets, data) => offsets :+ offsets.last + data.readableBytes()
+      }
+      offsets.dropRight(1).foreach(offset => buffer.writeShort(offset))
+
+      serviceResponses.foreach(buffer.writeBytes)
+
+      buffer
     }
 
     def decode(buffer: ByteBuf): MultipleServicePacketResponse = {
-      ??? // TODO
+      val dataStartIndex  = buffer.readerIndex()
+      val serviceCount    = buffer.readUnsignedShort()
+      val offsets         = for (i <- 0 until serviceCount) yield buffer.readUnsignedShort()
+
+      def slices(offsets: Seq[Int], data: Seq[ByteBuf]): Seq[ByteBuf] = {
+        offsets match {
+          case Seq(offset) =>
+            data :+ sliceAndSkip(buffer, dataStartIndex + offset, buffer.readableBytes())
+
+          case Seq(offset, tail@_*) =>
+            slices(tail, data :+ sliceAndSkip(buffer, dataStartIndex + offset, tail.head - offset))
+        }
+      }
+
+      MultipleServicePacketResponse(slices(offsets, List.empty))
     }
 
   }
+
+  private def sliceAndSkip(buffer: ByteBuf, index: Int, length: Int): ByteBuf = {
+    val slice = buffer.slice(index, length)
+    buffer.skipBytes(length)
+    slice
+  }
+
 }
