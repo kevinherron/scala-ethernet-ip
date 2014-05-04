@@ -19,6 +19,7 @@
 package com.digitalpetri.ethernetip.encapsulation.commands
 
 import com.digitalpetri.ethernetip.encapsulation.cpf.CpfPacket
+import com.digitalpetri.ethernetip.encapsulation.cpf.items.CipIdentityItem
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 
@@ -31,9 +32,15 @@ import io.netty.buffer.ByteBuf
  * (returned) by all EtherNet/IP devices.
  *
  * @param packet When replying, a [[CpfPacket]] that should contain a
- *               [[com.digitalpetri.ethernetip.encapsulation.cpf.CipIdentityItem]].
+ *               [[com.digitalpetri.ethernetip.encapsulation.cpf.items.CipIdentityItem]].
  */
-case class ListIdentity(packet: Option[CpfPacket] = None) extends Command(ListIdentityCode)
+case class ListIdentity(packet: Option[CpfPacket] = None) extends Command(ListIdentityCode) {
+  def identityItem(): Option[CipIdentityItem] = {
+    packet.map(p => p.items match {
+      case item :: Nil => item.asInstanceOf[CipIdentityItem]
+    })
+  }
+}
 
 object ListIdentity {
   def encode(command: ListIdentity, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
