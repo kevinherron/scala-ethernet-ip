@@ -36,8 +36,8 @@ class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(con
 
   private implicit val executionContext = config.executionContext
 
-  val pending = new TrieMap[Short, Promise[ByteBuf]]()
-  val sequenceNumber = new AtomicInteger(0)
+  private val pending = new TrieMap[Short, Promise[ByteBuf]]()
+  private val sequenceNumber = new AtomicInteger(0)
 
   def sendConnectedData(data: ByteBuf, connectionId: Int): Future[ByteBuf] = {
     val promise = Promise[ByteBuf]()
@@ -54,7 +54,7 @@ class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(con
 
     val timeout = config.wheelTimer.newTimeout(new TimerTask {
       override def run(timeout: Timeout): Unit = {
-        pendingPackets.remove(packet.sequenceNumber) match {
+        pending.remove(packet.sequenceNumber) match {
           case Some(p) => p.failure(new Exception("timed out waiting for response."))
           case None => // It arrived just in the nick of time...
         }

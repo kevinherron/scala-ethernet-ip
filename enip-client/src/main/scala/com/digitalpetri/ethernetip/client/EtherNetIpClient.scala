@@ -19,9 +19,9 @@
 package com.digitalpetri.ethernetip.client
 
 import com.digitalpetri.ethernetip.client.util.ChannelManager
-import com.digitalpetri.ethernetip.encapsulation.EncapsulationPacket
 import com.digitalpetri.ethernetip.encapsulation.commands._
 import com.digitalpetri.ethernetip.encapsulation.layers.PacketReceiver
+import com.digitalpetri.ethernetip.encapsulation.{EipSuccess, EncapsulationPacket}
 import com.typesafe.scalalogging.slf4j.Logging
 import io.netty.channel.{ChannelFuture, ChannelFutureListener, Channel}
 import io.netty.util.{Timeout, TimerTask}
@@ -34,11 +34,11 @@ import scala.util.Success
 
 class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver with Logging {
 
-  val channelManager = new ChannelManager(this, config)
+  protected val channelManager = new ChannelManager(this, config)
 
-  val sessionHandle = new AtomicLong(0L)
-  val senderContext = new AtomicLong(0L)
-  val pendingPackets = new TrieMap[Long, Promise[EncapsulationPacket]]()
+  private val sessionHandle = new AtomicLong(0L)
+  private val senderContext = new AtomicLong(0L)
+  private val pendingPackets = new TrieMap[Long, Promise[EncapsulationPacket]]()
 
   def registerSession(): Future[RegisterSession] = {
     implicit val ec = config.executionContext
@@ -223,15 +223,20 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
    *@param packet an [[EncapsulationPacket]].
    */
   override def onPacketReceived(packet: EncapsulationPacket): Unit = {
-    packet.data match {
-      case Some(command: SendUnitData) =>
-        onUnitDataReceived(command)
+    packet.status match {
+      case EipSuccess =>
+        packet.data match {
+          case Some(command: SendUnitData) =>
+            onUnitDataReceived(command)
 
-      case _ =>
-        pendingPackets.remove(packet.senderContext) match {
-          case Some(promise) => promise.success(packet)
-          case None => logger.error(s"No pending packet for senderContext=$senderContext")
+          case _ =>
+            pendingPackets.remove(packet.senderContext) match {
+              case Some(promise) => promise.success(packet)
+              case None => logger.error(s"No pending packet for senderContext=${packet.senderContext}")
+            }
         }
+
+      case status => logger.error(s"Received encapsulation layer status: $status")
     }
   }
 
