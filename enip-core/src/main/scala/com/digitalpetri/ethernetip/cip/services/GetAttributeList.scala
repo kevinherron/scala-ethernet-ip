@@ -19,7 +19,7 @@
 package com.digitalpetri.ethernetip.cip.services
 
 import com.digitalpetri.ethernetip.util.Buffers
-import io.netty.buffer.ByteBuf
+import io.netty.buffer.{ByteBufUtil, ByteBuf}
 import scala.util.Try
 
 object GetAttributeList {
@@ -27,17 +27,22 @@ object GetAttributeList {
   case class GetAttributeListRequest(attributes: Seq[AttributeRequest])
   case class GetAttributeListResponse(attributes: Seq[AttributeResponse])
 
-  /**
-   * @param id Attribute identifier.
-   */
-  case class AttributeRequest(id: Int)
+  type AttributeRequest = Int
+//  /**
+//   * @param id Attribute identifier.
+//   */
+//  case class AttributeRequest(id: Int) {
+//    override def toString: String = s"$productPrefix(id=$id)"
+//  }
 
   /**
    * @param id Attribute identifier.
    * @param status Status of the attribute response. 0x00 == Success.
    * @param data Attribute response. Only exists when status == 0x00.
    */
-  case class AttributeResponse(id: Int, status: Int, data: Option[ByteBuf])
+  case class AttributeResponse(id: Int, status: Int, data: Option[ByteBuf]) {
+    override def toString: String = f"$productPrefix(id=$id, status=0x$status%02X, data=${data.map(ByteBufUtil.hexDump)})"
+  }
 
   object GetAttributeListRequest {
     def encode(request: GetAttributeListRequest, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
@@ -68,7 +73,7 @@ object GetAttributeList {
       val count = buffer.readUnsignedShort()
 
       val attributes = for {
-        i <- 0 to count
+        i <- 0 until count
       } yield AttributeResponse.decode(attributeSizes(i), buffer)
 
       GetAttributeListResponse(attributes)
@@ -77,11 +82,11 @@ object GetAttributeList {
 
   object AttributeRequest {
     def encode(request: AttributeRequest, buffer: ByteBuf = Buffers.unpooled()): ByteBuf = {
-      buffer.writeShort(request.id)
+      buffer.writeShort(request)
     }
 
     def decode(buffer: ByteBuf): AttributeRequest = {
-      AttributeRequest(buffer.readUnsignedShort())
+      buffer.readUnsignedShort()
     }
   }
 
@@ -100,7 +105,7 @@ object GetAttributeList {
 
       val data: Option[ByteBuf] = {
         if (status != 0x00) None
-        else Some(buffer.readBytes(size))
+        else Some(buffer.readSlice(size))
       }
 
       AttributeResponse(id, status, data)

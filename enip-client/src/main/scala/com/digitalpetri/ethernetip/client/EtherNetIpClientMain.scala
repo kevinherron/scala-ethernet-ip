@@ -68,7 +68,7 @@ object EtherNetIpClientMain extends App {
 
   def testGetAttributeList() {
     val service = new GetAttributeListService(
-      attributes      = Seq(AttributeRequest(id = 1)),
+      attributes      = Seq(1),
       attributeSizes  = Seq(2),
       requestPath     = PaddedEPath(ClassId(CipClassCodes.MessageRouterObject), InstanceId(0x01)))
 

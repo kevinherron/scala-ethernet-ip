@@ -30,7 +30,16 @@ object CipStatusCodes {
     0x13 ->("not enough data", "The service did not supply enough data to perform the specified operation."),
     0x14 ->("attribute not supported", "The attribute specified in the request is not supported."),
     0x15 ->("too much data", "The service supplied more data than was expected."),
-    0x16 ->("object does not exist", "The object specified does not exist in the device.")
+    0x16 ->("object does not exist", "The object specified does not exist in the device."),
+    0x17 ->("service fragmentation sequence not in progress", "The fragmentation sequence for this service is not currently active for this data."),
+    0x18 ->("no stored attribute data", "The attribute data of this object was not saved prior to the requested service."),
+    0x19 ->("store operation failure", "The attribute data of this object was not saved due to a failure during the attempt."),
+    0x1A ->("routing failure, request packet too large", "The service request packet was too large for transmission on a network in the path to the destination. The routing device was forced to abort the service."),
+    0x1B ->("routing failure, response packet too large", "The service response packet was too large for transmission on a network in the path from the destination. The routing device was forced to abort the service."),
+    0x1C ->("missing attribute list entry data", "The service did not supply an attribute in a list of attributes that was needed by the service to perform the requested behavior."),
+    0x1D ->("invalid attribute value list", "The service is returning the list of attributes supplied with status information for those attributes that were invalid."),
+    0x1E ->("embedded service error", "An embedded service resulted in an error."),
+    0x1F ->("vendor specific error", "A vendor specific error has been encountered.")
   )
 
   def getName(status: Int): Option[String] = statusCodes.get(status).map(_._1)
