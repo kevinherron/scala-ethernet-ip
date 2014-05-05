@@ -20,7 +20,7 @@ package com.digitalpetri.ethernetip.encapsulation.cpf.items
 
 import com.digitalpetri.ethernetip.encapsulation.cpf.CpfItem
 import com.digitalpetri.ethernetip.util.Buffers
-import io.netty.buffer.ByteBuf
+import io.netty.buffer.{Unpooled, ByteBuf}
 
 /**
  * A data item that encapsulates an unconnected message.
@@ -63,10 +63,10 @@ object UnconnectedDataItem {
 
     assert(typeId == TypeId)
 
-    // ConnectedDataItem and UnconnectedDataItem are a special case; they use copy() instead of slice() because both
-    // are decoded in the netty event loop and will have their buffers auto-released as soon as decoding has finished.
+    // ConnectedDataItem and UnconnectedDataItem are a special case; they write the item data into an new, unpooled
+    // buffer so the source buffer can be (automatically) returned to the pool after leaving the Netty IO thread.
     val index = buffer.readerIndex()
-    val data  = buffer.copy(index, length)
+    val data  = Buffers.unpooled(length).writeBytes(buffer, index, length)
     buffer.readerIndex(index + length)
 
     UnconnectedDataItem(data)

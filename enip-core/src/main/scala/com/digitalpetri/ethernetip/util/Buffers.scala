@@ -26,6 +26,8 @@ object Buffers {
   val EmptyBuffer = Unpooled.EMPTY_BUFFER
 
   def unpooled(): ByteBuf = Unpooled.buffer().order(ByteOrder.LITTLE_ENDIAN)
+  
+  def unpooled(initialCapacity: Int): ByteBuf = Unpooled.buffer(initialCapacity).order(ByteOrder.LITTLE_ENDIAN)
 
   def composite(): CompositeByteBuf = Unpooled.compositeBuffer()
 
