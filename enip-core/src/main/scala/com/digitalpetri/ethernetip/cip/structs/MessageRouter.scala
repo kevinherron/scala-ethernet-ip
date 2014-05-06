@@ -72,7 +72,6 @@ object MessageRouterResponse {
     val additionalStatus = decodeAdditionalStatus(List.empty, buffer.readUnsignedByte())
 
     val data: Option[ByteBuf] = {
-      // TODO Is this ok, or should we only read when status is 0x00 or 0x06?
       if (buffer.readableBytes() == 0) None
       else Some(buffer.readSlice(buffer.readableBytes()))
     }

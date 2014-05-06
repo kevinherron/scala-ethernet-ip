@@ -77,7 +77,7 @@ object ForwardOpen {
       buffer.writeByte(priorityAndTimeoutBytes      & 0xFF)
 
       buffer.writeInt(0) // TODO chosen by remote and indicated in response?
-      buffer.writeInt(T2OConnectionIds.getAndIncrement)
+      buffer.writeInt(request.t2oConnectionId)
       buffer.writeShort(request.connectionSerialNumber)
 
       buffer.writeShort(request.vendorId)
