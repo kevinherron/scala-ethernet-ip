@@ -69,7 +69,8 @@ trait CipConnectionManager extends Logging {
           promise.completeWith(acquireConnection())
         }
 
-      case Failure(ex) => promise.failure(ex)
+      case Failure(ex) =>
+        promise.failure(new Exception(s"failed to acquire connection: ${ex.getMessage}", ex))
     }
 
     promise.future
@@ -78,7 +79,14 @@ trait CipConnectionManager extends Logging {
   def releaseConnection(connection: CipConnection) {
     logger.trace(s"CipConnection released: $connection")
 
-    timeouts.remove(connection.o2tConnectionId).foreach(_ => offerConnection(connection))
+    timeouts.remove(connection.o2tConnectionId) match {
+      case Some(timeout) =>
+        timeout.cancel()
+        offerConnection(connection)
+
+      case None =>
+        logger.debug(s"$connection released but no timeout found")
+    }
   }
 
   private def offerConnection(connection: CipConnection) {
