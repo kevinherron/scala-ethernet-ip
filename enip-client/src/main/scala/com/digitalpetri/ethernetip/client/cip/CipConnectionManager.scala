@@ -43,13 +43,13 @@ trait CipConnectionManager extends Logging {
 
   private val timeouts = new TrieMap[Int, Timeout]()
 
-  def reserveConnection(): Future[CipConnection] = {
+  def acquireConnection(): Future[CipConnection] = {
     val promise = Promise[CipConnection]()
 
-    val future = queue.poll(Some(config.timeout))
+    val future = queue.poll(Some(config.requestTimeout))
 
     if (!future.isCompleted) {
-      if (count.incrementAndGet() <= config.connections) {
+      if (count.incrementAndGet() <= config.concurrency) {
         allocateConnection().onComplete {
           case Success(connection) => offerConnection(connection)
           case Failure(ex) => count.decrementAndGet()
@@ -66,7 +66,7 @@ trait CipConnectionManager extends Logging {
           logger.trace(s"CipConnection taken: $c")
           promise.success(c)
         } else {
-          promise.completeWith(reserveConnection())
+          promise.completeWith(acquireConnection())
         }
 
       case Failure(ex) => promise.failure(ex)

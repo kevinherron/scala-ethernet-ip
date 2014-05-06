@@ -34,10 +34,10 @@ object EtherNetIpClientMain extends App {
   implicit val ec = ExecutionContext.global
 
   val config = new EtherNetIpClientConfig(
-    host = "10.20.4.57",
+    hostname = "10.20.4.57",
     vendorId = 0,
     serialNumber = 0,
-    connections = 2,
+    concurrency = 2,
     connectionPath = PaddedEPath(PortSegment(1, Array[Byte](0))),
     connectionTimeout = Duration(15, TimeUnit.SECONDS))
 

@@ -59,7 +59,7 @@ class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(con
           case None => // It arrived just in the nick of time...
         }
       }
-    }, config.timeout.length, config.timeout.unit)
+    }, config.requestTimeout.length, config.requestTimeout.unit)
 
     promise.future.onComplete {
       case _ => if (!timeout.isCancelled) timeout.cancel()
@@ -97,12 +97,12 @@ class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(con
           case None => logger.debug(s"Received unmatched connected data. connectionId=$connectionId, sequenceNumber=${packet.sequenceNumber}")
         }
 
-      case _ => logger.debug(s"Received unexpected items: ${command.packet.items}")
+      case _ => logger.warn(s"Received unexpected items: ${command.packet.items}")
     }
   }
 
   private def nextSequenceNumber(): Short =
-    sequenceNumber.getAndIncrement.toShort
+    sequenceNumber.incrementAndGet().toShort
 
 }
 

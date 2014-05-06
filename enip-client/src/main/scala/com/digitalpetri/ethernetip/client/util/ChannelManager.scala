@@ -49,9 +49,9 @@ class ChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) e
       .channel(classOf[NioSocketChannel])
       .handler(initializer)
 
-    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Int.box(config.timeout.toMillis.toInt))
+    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Int.box(config.requestTimeout.toMillis.toInt))
 
-    bootstrap.connect(config.host, config.port).addListener(new ChannelFutureListener {
+    bootstrap.connect(config.hostname, config.port).addListener(new ChannelFutureListener {
       def operationComplete(future: ChannelFuture): Unit = {
         if (future.isSuccess) {
           channelPromise.success(future.channel())

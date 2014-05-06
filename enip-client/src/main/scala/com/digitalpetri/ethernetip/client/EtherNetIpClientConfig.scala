@@ -21,18 +21,17 @@ package com.digitalpetri.ethernetip.client
 import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
 import io.netty.channel.EventLoopGroup
 import io.netty.util.HashedWheelTimer
-import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.{FiniteDuration, Duration}
+import scala.concurrent.duration._
 
-case class EtherNetIpClientConfig(host: String,
+case class EtherNetIpClientConfig(hostname: String,
                                   port: Int = 44818,
                                   vendorId: Int,
                                   serialNumber: Int,
-                                  connections: Int = 2,
+                                  concurrency: Int = 2,
                                   connectionPath: PaddedEPath,
-                                  connectionTimeout: Duration = FiniteDuration(15, TimeUnit.SECONDS),
-                                  timeout: Duration = FiniteDuration(5, TimeUnit.SECONDS),
+                                  connectionTimeout: Duration = 15.seconds,
+                                  requestTimeout: Duration = 5.seconds,
                                   executionContext: ExecutionContext = ExecutionContext.global,
                                   eventLoop: EventLoopGroup = EtherNetIpShared.SharedEventLoop,
                                   wheelTimer: HashedWheelTimer = EtherNetIpShared.SharedWheelTimer)

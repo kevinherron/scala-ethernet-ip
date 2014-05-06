@@ -196,7 +196,7 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
             case None => // It arrived just in the nick of time...
           }
         }
-      }, config.timeout.length, config.timeout.unit)
+      }, config.requestTimeout.length, config.requestTimeout.unit)
 
       promise.future.onComplete {
         case _ => if (!timeout.isCancelled) timeout.cancel()
