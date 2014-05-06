@@ -18,16 +18,20 @@
 
 package com.digitalpetri.ethernetip.util
 
-import io.netty.buffer.{CompositeByteBuf, Unpooled, ByteBuf}
+import io.netty.buffer.{PooledByteBufAllocator, CompositeByteBuf, Unpooled, ByteBuf}
 import java.nio.ByteOrder
 
 object Buffers {
 
+  val PooledAllocator = PooledByteBufAllocator.DEFAULT
+
   val EmptyBuffer = Unpooled.EMPTY_BUFFER
 
   def unpooled(): ByteBuf = Unpooled.buffer().order(ByteOrder.LITTLE_ENDIAN)
-  
   def unpooled(initialCapacity: Int): ByteBuf = Unpooled.buffer(initialCapacity).order(ByteOrder.LITTLE_ENDIAN)
+
+  def pooled(): ByteBuf = PooledAllocator.buffer().order(ByteOrder.LITTLE_ENDIAN)
+  def pooled(initialCapacity: Int): ByteBuf = PooledAllocator.buffer(initialCapacity).order(ByteOrder.LITTLE_ENDIAN)
 
   def composite(): CompositeByteBuf = Unpooled.compositeBuffer()
 
