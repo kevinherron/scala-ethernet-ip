@@ -18,7 +18,8 @@
 
 package com.digitalpetri.ethernetip.client
 
-import com.digitalpetri.ethernetip.client.util.ChannelManager
+import com.codahale.metrics.{MetricRegistry, Metric, MetricSet, Counter}
+import com.digitalpetri.ethernetip.client.util.{ScalaMetricSet, ChannelManager}
 import com.digitalpetri.ethernetip.encapsulation.commands._
 import com.digitalpetri.ethernetip.encapsulation.layers.PacketReceiver
 import com.digitalpetri.ethernetip.encapsulation.{EipSuccess, EncapsulationPacket}
@@ -35,6 +36,8 @@ import scala.util.Success
 class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver with Logging {
 
   protected val channelManager = new ChannelManager(this, config)
+
+  protected val timeoutCounter = new Counter()
 
   private val sessionHandle = new AtomicLong(0L)
   private val senderContext = new AtomicLong(0L)
@@ -192,7 +195,9 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
       val timeout = config.wheelTimer.newTimeout(new TimerTask {
         override def run(timeout: Timeout): Unit = {
           pendingPackets.remove(context) match {
-            case Some(p) => p.failure(new Exception("timed out waiting for response."))
+            case Some(p) =>
+              p.failure(new Exception("timed out waiting for response."))
+              timeoutCounter.inc()
             case None => // It arrived just in the nick of time...
           }
         }
@@ -217,10 +222,7 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
   /**
    * An [[EncapsulationPacket]] has been decoded.
    *
-   * At this point the current thread is still an event loop thread. Any un-decoded [[io.netty.buffer.ByteBuf]]s
-   * contained in the packet must be decoded before leaving this thread.
-   *
-   *@param packet an [[EncapsulationPacket]].
+   * @param packet an [[EncapsulationPacket]].
    */
   override def onPacketReceived(packet: EncapsulationPacket): Unit = {
     packet.status match {
@@ -240,6 +242,20 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
     }
   }
 
+  /**
+   * A [[SendUnitData]] command has been decoded.
+   * @param command a [[SendUnitData]] command.
+   */
   def onUnitDataReceived(command: SendUnitData) {}
+
+  def getMetricSet: ScalaMetricSet = {
+    val metrics = Map(metricName("timeout-counter") -> timeoutCounter)
+
+    new ScalaMetricSet(metrics)
+  }
+
+  protected def metricName(name: String) = {
+    MetricRegistry.name(getClass, config.instanceId.getOrElse(""), name)
+  }
 
 }

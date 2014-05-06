@@ -32,6 +32,7 @@ case class EtherNetIpClientConfig(hostname: String,
                                   connectionPath: PaddedEPath,
                                   connectionTimeout: Duration = 15.seconds,
                                   requestTimeout: Duration = 5.seconds,
+                                  instanceId: Option[String] = None,
                                   executionContext: ExecutionContext = ExecutionContext.global,
                                   eventLoop: EventLoopGroup = EtherNetIpShared.SharedEventLoop,
                                   wheelTimer: HashedWheelTimer = EtherNetIpShared.SharedWheelTimer)

@@ -18,7 +18,9 @@
 
 package com.digitalpetri.ethernetip.client.cip
 
+import com.codahale.metrics.Timer
 import com.digitalpetri.ethernetip.cip.structs.ConnectedPacket
+import com.digitalpetri.ethernetip.client.util.ScalaMetricSet
 import com.digitalpetri.ethernetip.client.{EtherNetIpClient, EtherNetIpClientConfig}
 import com.digitalpetri.ethernetip.encapsulation.commands.{SendRRData, SendUnitData}
 import com.digitalpetri.ethernetip.encapsulation.cpf.CpfPacket
@@ -35,6 +37,9 @@ import scala.util.{Failure, Success}
 class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(config) with CipServiceInvoker with Logging {
 
   private implicit val executionContext = config.executionContext
+
+  private val connectedRequestTimer = new Timer()
+  private val unconnectedRequestTimer = new Timer()
 
   private val pending = new TrieMap[Short, Promise[ByteBuf]]()
   private val sequenceNumber = new AtomicInteger(0)
@@ -55,17 +60,23 @@ class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(con
     val timeout = config.wheelTimer.newTimeout(new TimerTask {
       override def run(timeout: Timeout): Unit = {
         pending.remove(packet.sequenceNumber) match {
-          case Some(p) => p.failure(new Exception("timed out waiting for response."))
+          case Some(p) =>
+            p.failure(new Exception("timed out waiting for response."))
+            timeoutCounter.inc()
           case None => // It arrived just in the nick of time...
         }
       }
     }, config.requestTimeout.length, config.requestTimeout.unit)
 
-    promise.future.onComplete {
-      case _ => if (!timeout.isCancelled) timeout.cancel()
-    }
+    val timerContext = connectedRequestTimer.time()
 
     sendData(SendUnitData(packet = CpfPacket(List(addressItem, dataItem))))
+
+    promise.future.onComplete {
+      case _ =>
+        timeout.cancel()
+        timerContext.stop()
+    }
 
     promise.future
   }
@@ -73,6 +84,8 @@ class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(con
   def sendUnconnectedData(data: ByteBuf): Future[ByteBuf] = {
     val promise = Promise[ByteBuf]()
     val command = SendRRData(packet = CpfPacket(List(NullAddressItem(), UnconnectedDataItem(data))))
+
+    val timerContext = unconnectedRequestTimer.time()
 
     sendData(command).onComplete {
       case Success(response) =>
@@ -82,6 +95,10 @@ class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(con
         }
 
       case Failure(ex) => promise.failure(ex)
+    }
+
+    promise.future.onComplete {
+      case _ => timerContext.stop()
     }
 
     promise.future
@@ -103,6 +120,14 @@ class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(con
 
   private def nextSequenceNumber(): Short =
     sequenceNumber.incrementAndGet().toShort
+
+  override def getMetricSet: ScalaMetricSet = {
+    val metrics = Map(
+      metricName("connected-request-timer") -> connectedRequestTimer,
+      metricName("unconnected-request-timer") -> unconnectedRequestTimer)
+
+    new ScalaMetricSet(super.getMetricSet.metrics ++ metrics)
+  }
 
 }
 
