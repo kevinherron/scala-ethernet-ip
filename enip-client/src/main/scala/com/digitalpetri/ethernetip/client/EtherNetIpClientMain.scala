@@ -45,12 +45,10 @@ object EtherNetIpClientMain extends App {
 
   val future = for {
     identity    <- client.listIdentity()
-    register    <- client.registerSession()
     services    <- client.listServices()
     interfaces  <- client.listInterfaces()
   } yield {
     println(s"identity=$identity")
-    println(s"register=$register")
     println(s"services=$services")
     println(s"interfaces=$interfaces")
   }

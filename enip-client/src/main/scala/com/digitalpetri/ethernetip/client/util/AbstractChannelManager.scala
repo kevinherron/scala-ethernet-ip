@@ -18,7 +18,7 @@
 
 package com.digitalpetri.ethernetip.client.util
 
-import io.netty.channel.{ChannelFuture, Channel}
+import io.netty.channel.{ChannelFutureListener, ChannelFuture, Channel}
 import io.netty.util.concurrent.GenericFutureListener
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent._
@@ -57,19 +57,20 @@ abstract class AbstractChannelManager {
 
     channelPromise.future.onComplete {
       case Success(ch) =>
-        preConnectedState(ch)
-
-        if (state.compareAndSet(expectedState, Connected(ch))) {
-          ch.closeFuture().addListener(new GenericFutureListener[ChannelFuture] {
-            def operationComplete(future: ChannelFuture) {
-              state.set(Idle)
-            }
-          })
+        preConnectedState(ch).onComplete {
+          case _ => moveToConnectedState()
         }
 
-        promise.success(ch)
+        def moveToConnectedState() {
+          ch.closeFuture().addListener(new ChannelFutureListener {
+            override def operationComplete(future: ChannelFuture): Unit = state.set(Idle)
+          })
 
-        postConnectedState()
+          state.set(Connected(ch))
+          promise.success(ch)
+
+          postConnectedState()
+        }
 
       case Failure(ex) =>
         state.compareAndSet(expectedState, Idle)
@@ -85,7 +86,7 @@ abstract class AbstractChannelManager {
   def connect(channelPromise: Promise[Channel]): Unit
 
   /** The channel is open and the state is soon to be Connected; maybe do something? */
-  def preConnectedState(channel: Channel): Unit = {}
+  def preConnectedState(channel: Channel): Future[Any] = { Future.successful(Unit) }
 
   /** The state is now Connected; maybe do something? */
   def postConnectedState(): Unit = {}

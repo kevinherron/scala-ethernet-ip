@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.digitalpetri.ethernetip.client.util
+package com.digitalpetri.ethernetip.client
 
-import com.digitalpetri.ethernetip.client.{EtherNetIpClientConfig, EtherNetIpClient}
+import com.digitalpetri.ethernetip.client.util.AbstractChannelManager
 import com.digitalpetri.ethernetip.encapsulation.layers.{DispatchLayer, PacketLayer}
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel._
@@ -26,16 +26,15 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.{ExecutionContext, Promise}
+import scala.concurrent.{Future, ExecutionContext, Promise}
 
-class ChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) extends AbstractChannelManager {
+class EtherNetIpChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) extends AbstractChannelManager {
 
   type PreConnectCallback = (Channel) => Unit
   type PostConnectCallback = (EtherNetIpClient) => Unit
 
   implicit val executionContext: ExecutionContext = config.executionContext
 
-  private val preConnectCallback = new AtomicReference[Option[PreConnectCallback]](Option.empty)
   private val postConnectCallbacks = new AtomicReference[Seq[PostConnectCallback]](Seq.empty)
 
   /**
@@ -69,10 +68,6 @@ class ChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) e
     })
   }
 
-  def setPreConnectCallback(callback: PreConnectCallback) = synchronized {
-    preConnectCallback.set(Some(callback))
-  }
-
   def addPostConnectCallback(callback: PostConnectCallback) = synchronized {
     postConnectCallbacks.set(postConnectCallbacks.get() :+ callback)
   }
@@ -82,8 +77,8 @@ class ChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) e
   }
 
   /** The channel is open and the state is soon to be Connected; maybe do something? */
-  override def preConnectedState(channel: Channel): Unit = {
-    preConnectCallback.get().map(_.apply(channel))
+  override def preConnectedState(channel: Channel): Future[Any] = {
+    client.registerSession(channel)
   }
 
   /** The state is now Connected; maybe do something? */

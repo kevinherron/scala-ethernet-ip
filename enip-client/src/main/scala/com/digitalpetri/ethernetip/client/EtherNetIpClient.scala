@@ -19,7 +19,7 @@
 package com.digitalpetri.ethernetip.client
 
 import com.codahale.metrics.{MetricRegistry, Counter}
-import com.digitalpetri.ethernetip.client.util.{ScalaMetricSet, ChannelManager}
+import com.digitalpetri.ethernetip.client.util.ScalaMetricSet
 import com.digitalpetri.ethernetip.encapsulation.commands._
 import com.digitalpetri.ethernetip.encapsulation.layers.PacketReceiver
 import com.digitalpetri.ethernetip.encapsulation.{EipSuccess, EncapsulationPacket}
@@ -29,13 +29,13 @@ import io.netty.util.{Timeout, TimerTask}
 import java.util.concurrent.atomic.AtomicLong
 import scala.Some
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{Await, Promise, Future}
+import scala.concurrent.{Promise, Future}
 import scala.util.Failure
 import scala.util.Success
 
 class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver with Logging {
 
-  protected val channelManager = new ChannelManager(this, config)
+  protected val channelManager = new EtherNetIpChannelManager(this, config)
 
   protected val timeoutCounter = new Counter()
 
@@ -43,16 +43,12 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
   private val senderContext = new AtomicLong(0L)
   private val pendingPackets = new TrieMap[Long, Promise[EncapsulationPacket]]()
 
-  channelManager.setPreConnectCallback {
-    channel => Await.result(registerSession(Some(channel)), config.requestTimeout)
-  }
-
-  private def registerSession(channel: Option[Channel]): Future[RegisterSession] = {
+  private[client] def registerSession(channel: Channel): Future[RegisterSession] = {
     implicit val ec = config.executionContext
 
     val promise = Promise[RegisterSession]()
 
-    sendCommand(RegisterSession(), channel).onComplete {
+    sendCommand(RegisterSession(), Some(channel)).onComplete {
       case Success(packet) =>
         packet.data match {
           case Some(cmd: RegisterSession) =>
@@ -67,10 +63,6 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
     }
 
     promise.future
-  }
-
-  def registerSession(): Future[RegisterSession] = {
-    registerSession(None)
   }
 
   def unRegisterSession(): Future[UnRegisterSession] = {
