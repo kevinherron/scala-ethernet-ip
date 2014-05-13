@@ -31,4 +31,8 @@ object EtherNetIpShared {
     SharedWheelTimer.stop()
   }
 
+  Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
+    def run(): Unit = shutdown()
+  }))
+
 }
