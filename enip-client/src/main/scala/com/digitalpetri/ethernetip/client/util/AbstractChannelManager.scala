@@ -35,7 +35,7 @@ abstract class AbstractChannelManager {
 
   import AbstractChannelManager._
 
-  private[this] val state = new AtomicReference[State](Idle)
+  private val state = new AtomicReference[State](Idle)
 
   def getChannel: Either[Future[Channel], Channel] = {
     state.get match {
@@ -52,9 +52,13 @@ abstract class AbstractChannelManager {
     }
   }
 
-  private[this] def connect(expectedState: State, channelPromise: Promise[Channel]): Future[Channel] = {
+  private def connect(expectedState: State, channelPromise: Promise[Channel]): Future[Channel] = {
+    val promise = Promise[Channel]()
+
     channelPromise.future.onComplete {
       case Success(ch) =>
+        preConnectedState(ch)
+
         if (state.compareAndSet(expectedState, Connected(ch))) {
           ch.closeFuture().addListener(new GenericFutureListener[ChannelFuture] {
             def operationComplete(future: ChannelFuture) {
@@ -63,22 +67,30 @@ abstract class AbstractChannelManager {
           })
         }
 
-      case Failure(ex) => state.compareAndSet(expectedState, Idle)
+        promise.success(ch)
+
+        postConnectedState()
+
+      case Failure(ex) =>
+        state.compareAndSet(expectedState, Idle)
+        promise.failure(ex)
     }
 
     connect(channelPromise)
 
-    channelPromise.future
+    promise.future
   }
 
-  /**
-   * Make a connection, completing the Promise with the resulting Channel.
-   */
+  /** Make a connection, completing the Promise with the resulting Channel. */
   def connect(channelPromise: Promise[Channel]): Unit
 
-  /**
-   * ExecutionContext to run completion callbacks on.
-   */
+  /** The channel is open and the state is soon to be Connected; maybe do something? */
+  def preConnectedState(channel: Channel): Unit = {}
+
+  /** The state is now Connected; maybe do something? */
+  def postConnectedState(): Unit = {}
+
+  /** ExecutionContext to run completion callbacks on. */
   implicit val executionContext: ExecutionContext
 
   def getStatus: String = state.get match {
@@ -94,7 +106,5 @@ abstract class AbstractChannelManager {
       case s@Idle => // No-op
     }
   }
-
-
 
 }

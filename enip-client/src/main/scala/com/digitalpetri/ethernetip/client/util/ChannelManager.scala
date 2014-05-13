@@ -25,11 +25,18 @@ import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Promise}
 
 class ChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) extends AbstractChannelManager {
 
+  type PreConnectCallback = (Channel) => Unit
+  type PostConnectCallback = (EtherNetIpClient) => Unit
+
   implicit val executionContext: ExecutionContext = config.executionContext
+
+  private val preConnectCallback = new AtomicReference[Option[PreConnectCallback]](Option.empty)
+  private val postConnectCallbacks = new AtomicReference[Seq[PostConnectCallback]](Seq.empty)
 
   /**
    * Make a connection, completing the Promise with the resulting Channel.
@@ -60,6 +67,28 @@ class ChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) e
         }
       }
     })
+  }
+
+  def setPreConnectCallback(callback: PreConnectCallback) = synchronized {
+    preConnectCallback.set(Some(callback))
+  }
+
+  def addPostConnectCallback(callback: PostConnectCallback) = synchronized {
+    postConnectCallbacks.set(postConnectCallbacks.get() :+ callback)
+  }
+
+  def removePostConnectCallback(callback: PostConnectCallback) = synchronized {
+    postConnectCallbacks.set(postConnectCallbacks.get().filter(_ != callback))
+  }
+
+  /** The channel is open and the state is soon to be Connected; maybe do something? */
+  override def preConnectedState(channel: Channel): Unit = {
+    preConnectCallback.get().map(_.apply(channel))
+  }
+
+  /** The state is now Connected; maybe do something? */
+  override def postConnectedState(): Unit = synchronized {
+    postConnectCallbacks.get().foreach(callback => callback(client))
   }
 
 }
