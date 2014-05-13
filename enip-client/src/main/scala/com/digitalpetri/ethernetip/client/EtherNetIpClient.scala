@@ -18,7 +18,7 @@
 
 package com.digitalpetri.ethernetip.client
 
-import com.codahale.metrics.{MetricRegistry, Metric, MetricSet, Counter}
+import com.codahale.metrics.{MetricRegistry, Counter}
 import com.digitalpetri.ethernetip.client.util.{ScalaMetricSet, ChannelManager}
 import com.digitalpetri.ethernetip.encapsulation.commands._
 import com.digitalpetri.ethernetip.encapsulation.layers.PacketReceiver
@@ -29,7 +29,7 @@ import io.netty.util.{Timeout, TimerTask}
 import java.util.concurrent.atomic.AtomicLong
 import scala.Some
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{Promise, Future}
+import scala.concurrent.{Await, Promise, Future}
 import scala.util.Failure
 import scala.util.Success
 
@@ -43,12 +43,16 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
   private val senderContext = new AtomicLong(0L)
   private val pendingPackets = new TrieMap[Long, Promise[EncapsulationPacket]]()
 
-  def registerSession(): Future[RegisterSession] = {
+  channelManager.setPreConnectCallback {
+    channel => Await.result(registerSession(Some(channel)), config.requestTimeout)
+  }
+
+  private def registerSession(channel: Option[Channel]): Future[RegisterSession] = {
     implicit val ec = config.executionContext
 
     val promise = Promise[RegisterSession]()
 
-    sendCommand(RegisterSession()).onComplete {
+    sendCommand(RegisterSession(), channel).onComplete {
       case Success(packet) =>
         packet.data match {
           case Some(cmd: RegisterSession) =>
@@ -63,6 +67,10 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
     }
 
     promise.future
+  }
+
+  def registerSession(): Future[RegisterSession] = {
+    registerSession(None)
   }
 
   def unRegisterSession(): Future[UnRegisterSession] = {
@@ -174,17 +182,23 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
     promise.future
   }
 
-  private def sendCommand[T <: Command](command: T): Future[EncapsulationPacket] = {
+  private def sendCommand[T <: Command](command: T, channel: Option[Channel] = None): Future[EncapsulationPacket] = {
     implicit val ec = config.executionContext
 
     val promise = Promise[EncapsulationPacket]()
 
-    channelManager.getChannel match {
-      case Left(fch) => fch.onComplete {
-        case Success(ch) => write(ch)
-        case Failure(ex) => promise.failure(ex)
-      }
-      case Right(ch) => write(ch)
+    channel match {
+      case Some(ch) =>
+        write(ch)
+
+      case None =>
+        channelManager.getChannel match {
+          case Left(fch) => fch.onComplete {
+            case Success(ch) => write(ch)
+            case Failure(ex) => promise.failure(ex)
+          }
+          case Right(ch) => write(ch)
+        }
     }
 
     def write(ch: Channel) {
@@ -256,6 +270,15 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
 
   protected def metricName(name: String) = {
     MetricRegistry.name(getClass, config.instanceId.getOrElse(""), name)
+  }
+
+  /**
+   * @return the status of the underlying connection - Idle, Connecting, or Connected.
+   */
+  def getStatus: String = channelManager.getStatus
+
+  def disconnect() {
+    channelManager.disconnect()
   }
 
 }

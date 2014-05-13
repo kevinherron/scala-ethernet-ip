@@ -129,5 +129,11 @@ class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(con
     new ScalaMetricSet(super.getMetricSet.metrics ++ metrics)
   }
 
+  override def disconnect(): Unit = {
+    // TODO ForwardClose all CipConnections
+
+    super.disconnect()
+  }
+
 }
 
