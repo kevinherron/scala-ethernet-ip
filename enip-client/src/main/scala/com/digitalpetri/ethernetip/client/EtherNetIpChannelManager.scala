@@ -30,7 +30,6 @@ import scala.concurrent.{Future, ExecutionContext, Promise}
 
 class EtherNetIpChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) extends AbstractChannelManager {
 
-  type PreConnectCallback = (Channel) => Unit
   type PostConnectCallback = (EtherNetIpClient) => Unit
 
   implicit val executionContext: ExecutionContext = config.executionContext
