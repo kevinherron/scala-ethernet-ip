@@ -18,16 +18,16 @@
 
 package com.digitalpetri.ethernetip.client
 
+import java.util.concurrent.TimeUnit
+
 import com.digitalpetri.ethernetip.cip.CipClassCodes
 import com.digitalpetri.ethernetip.cip.epath._
-import com.digitalpetri.ethernetip.cip.services.GetAttributeList.AttributeRequest
 import com.digitalpetri.ethernetip.client.cip.CipClient
-import com.digitalpetri.ethernetip.client.cip.services.{GetAttributeSingleService, GetAttributeListService}
-import java.util.concurrent.TimeUnit
+import com.digitalpetri.ethernetip.client.cip.services.{GetAttributeListService, GetAttributeSingleService}
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 object EtherNetIpClientMain extends App {
 

@@ -19,7 +19,7 @@ package com.digitalpetri.ethernetip.encapsulation
 import com.digitalpetri.ethernetip.encapsulation.commands._
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
-import scala.Some
+
 import scala.util.Try
 
 

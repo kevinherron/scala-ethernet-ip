@@ -19,11 +19,12 @@
 package com.digitalpetri.ethernetip.client.cip.services
 
 import com.digitalpetri.ethernetip.cip.CipClassCodes
-import com.digitalpetri.ethernetip.cip.epath.{InstanceId, ClassId, PaddedEPath}
+import com.digitalpetri.ethernetip.cip.epath.{ClassId, InstanceId, PaddedEPath}
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen.{ForwardOpenRequest, ForwardOpenResponse}
 import com.digitalpetri.ethernetip.cip.structs.MessageRouterRequest
 import io.netty.buffer.ByteBuf
+
 import scala.util.Try
 
 class ForwardOpenService(request: ForwardOpenRequest) extends AbstractInvokableService[ForwardOpenResponse] {

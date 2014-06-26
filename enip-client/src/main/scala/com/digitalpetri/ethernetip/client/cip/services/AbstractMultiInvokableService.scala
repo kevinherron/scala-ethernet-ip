@@ -4,8 +4,9 @@ import com.digitalpetri.ethernetip.cip.structs.MessageRouterResponse
 import com.digitalpetri.ethernetip.client.cip.CipResponseException
 import com.digitalpetri.ethernetip.util.Implicits.KestrelCombinator
 import io.netty.buffer.ByteBuf
+
 import scala.concurrent.{Future, Promise}
-import scala.util.{Try, Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 abstract class AbstractMultiInvokableService[T] extends InvokableService[T] {
 

@@ -18,9 +18,10 @@
 
 package com.digitalpetri.ethernetip.client.util
 
-import io.netty.channel.{ChannelFutureListener, ChannelFuture, Channel}
-import io.netty.util.concurrent.GenericFutureListener
 import java.util.concurrent.atomic.AtomicReference
+
+import io.netty.channel.{Channel, ChannelFuture, ChannelFutureListener}
+
 import scala.concurrent._
 import scala.util.{Failure, Success}
 
@@ -33,7 +34,7 @@ object AbstractChannelManager {
 
 abstract class AbstractChannelManager {
 
-  import AbstractChannelManager._
+  import com.digitalpetri.ethernetip.client.util.AbstractChannelManager._
 
   private val state = new AtomicReference[State](Idle)
 

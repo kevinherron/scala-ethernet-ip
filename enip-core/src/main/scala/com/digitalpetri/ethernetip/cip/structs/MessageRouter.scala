@@ -19,6 +19,7 @@ package com.digitalpetri.ethernetip.cip.structs
 import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
+
 import scala.util.Try
 
 /**

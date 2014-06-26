@@ -18,20 +18,22 @@
 
 package com.digitalpetri.ethernetip.client.cip
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import com.codahale.metrics.Timer
 import com.digitalpetri.ethernetip.cip.structs.ConnectedPacket
 import com.digitalpetri.ethernetip.client.util.ScalaMetricSet
 import com.digitalpetri.ethernetip.client.{EtherNetIpClient, EtherNetIpClientConfig}
 import com.digitalpetri.ethernetip.encapsulation.commands.{SendRRData, SendUnitData}
 import com.digitalpetri.ethernetip.encapsulation.cpf.CpfPacket
-import com.digitalpetri.ethernetip.encapsulation.cpf.items.{UnconnectedDataItem, NullAddressItem, ConnectedDataItem, ConnectedAddressItem}
+import com.digitalpetri.ethernetip.encapsulation.cpf.items.{ConnectedAddressItem, ConnectedDataItem, NullAddressItem, UnconnectedDataItem}
 import com.digitalpetri.ethernetip.util.Buffers
 import com.typesafe.scalalogging.slf4j.Logging
 import io.netty.buffer.ByteBuf
-import io.netty.util.{TimerTask, Timeout}
-import java.util.concurrent.atomic.AtomicInteger
+import io.netty.util.{Timeout, TimerTask}
+
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{Promise, Future}
+import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(config) with CipServiceInvoker with Logging {

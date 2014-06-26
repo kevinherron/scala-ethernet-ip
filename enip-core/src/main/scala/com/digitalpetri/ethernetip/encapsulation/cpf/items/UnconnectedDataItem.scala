@@ -19,7 +19,6 @@ package com.digitalpetri.ethernetip.encapsulation.cpf.items
 import com.digitalpetri.ethernetip.encapsulation.cpf.CpfItem
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
-import io.netty.util.ReferenceCountUtil
 
 /**
  * A data item that encapsulates an unconnected message.
@@ -47,7 +46,6 @@ object UnconnectedDataItem {
     // Encode the encapsulated data...
     val dataStartIndex = buffer.writerIndex
     buffer.writeBytes(item.data)
-    ReferenceCountUtil.release(item.data)
 
     // Go back and update the length.
     val bytesWritten = buffer.writerIndex - dataStartIndex

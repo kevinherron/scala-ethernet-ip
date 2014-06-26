@@ -1,7 +1,7 @@
 package com.digitalpetri.ethernetip.cip.structs
 
-import org.scalatest.FunSuite
 import com.digitalpetri.ethernetip.util.Buffers
+import org.scalatest.FunSuite
 
 class MessageRouterResponseTest extends FunSuite {
 

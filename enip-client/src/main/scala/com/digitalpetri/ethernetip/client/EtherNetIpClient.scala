@@ -18,20 +18,20 @@
 
 package com.digitalpetri.ethernetip.client
 
-import com.codahale.metrics.{MetricRegistry, Counter}
+import java.util.concurrent.atomic.AtomicLong
+
+import com.codahale.metrics.{Counter, MetricRegistry}
 import com.digitalpetri.ethernetip.client.util.ScalaMetricSet
 import com.digitalpetri.ethernetip.encapsulation.commands._
 import com.digitalpetri.ethernetip.encapsulation.layers.PacketReceiver
 import com.digitalpetri.ethernetip.encapsulation.{EipSuccess, EncapsulationPacket}
 import com.typesafe.scalalogging.slf4j.Logging
-import io.netty.channel.{ChannelFuture, ChannelFutureListener, Channel}
+import io.netty.channel.{Channel, ChannelFuture, ChannelFutureListener}
 import io.netty.util.{Timeout, TimerTask}
-import java.util.concurrent.atomic.AtomicLong
-import scala.Some
+
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{Promise, Future}
-import scala.util.Failure
-import scala.util.Success
+import scala.concurrent.{Future, Promise}
+import scala.util.{Failure, Success}
 
 class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver with Logging {
 

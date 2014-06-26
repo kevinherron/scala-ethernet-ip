@@ -18,8 +18,8 @@
 
 package com.digitalpetri.ethernetip.cip.services
 
-import org.scalatest.FunSuite
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters
+import org.scalatest.FunSuite
 
 class NetworkConnectionParametersTest extends FunSuite {
 

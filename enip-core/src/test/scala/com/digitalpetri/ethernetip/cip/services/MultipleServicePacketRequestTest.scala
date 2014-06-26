@@ -1,8 +1,8 @@
 package com.digitalpetri.ethernetip.cip.services
 
-import org.scalatest.FunSuite
 import com.digitalpetri.ethernetip.cip.services.MultipleServicePacket.MultipleServicePacketRequest
 import com.digitalpetri.ethernetip.util.Buffers
+import org.scalatest.FunSuite
 
 class MultipleServicePacketRequestTest extends FunSuite {
 

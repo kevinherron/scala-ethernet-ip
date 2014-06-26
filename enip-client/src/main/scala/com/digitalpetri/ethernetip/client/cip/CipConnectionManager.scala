@@ -18,17 +18,19 @@
 
 package com.digitalpetri.ethernetip.client.cip
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen.ForwardOpenRequest
 import com.digitalpetri.ethernetip.client.cip.services.ForwardOpenService
 import com.digitalpetri.ethernetip.client.util.AsyncQueue
 import com.typesafe.scalalogging.slf4j.Logging
-import io.netty.util.{TimerTask, Timeout}
-import java.util.concurrent.atomic.AtomicInteger
+import io.netty.util.{Timeout, TimerTask}
+
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{Promise, Future}
-import scala.util.{Random, Failure, Success}
+import scala.concurrent.{Future, Promise}
+import scala.util.{Failure, Random, Success}
 
 trait CipConnectionManager extends Logging {
   this: CipClient =>

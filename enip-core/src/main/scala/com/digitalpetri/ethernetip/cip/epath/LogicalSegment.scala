@@ -16,10 +16,8 @@
 
 package com.digitalpetri.ethernetip.cip.epath
 
-import com.digitalpetri.ethernetip.cip.epath.LogicalSegment.ElectronicKey
-import com.digitalpetri.ethernetip.cip.epath.LogicalSegment.LogicalFormat
 import com.digitalpetri.ethernetip.cip.epath.LogicalSegment.LogicalFormat._
-import com.digitalpetri.ethernetip.cip.epath.LogicalSegment.LogicalType
+import com.digitalpetri.ethernetip.cip.epath.LogicalSegment.{ElectronicKey, LogicalFormat, LogicalType}
 import com.digitalpetri.ethernetip.cip.epath.LogicalSegment.LogicalType.LogicalType
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf

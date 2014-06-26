@@ -18,8 +18,10 @@
 
 package com.digitalpetri.ethernetip.client.util
 
-import io.netty.util.{Timeout, TimerTask, HashedWheelTimer}
 import java.util.concurrent.atomic.AtomicReference
+
+import io.netty.util.{HashedWheelTimer, Timeout, TimerTask}
+
 import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 import scala.concurrent._
@@ -39,7 +41,7 @@ object AsyncQueue {
  */
 class AsyncQueue[T](wheelTimer: HashedWheelTimer, executionContext: ExecutionContext) {
 
-  import AsyncQueue._
+  import com.digitalpetri.ethernetip.client.util.AsyncQueue._
 
   private implicit val ec = executionContext
 

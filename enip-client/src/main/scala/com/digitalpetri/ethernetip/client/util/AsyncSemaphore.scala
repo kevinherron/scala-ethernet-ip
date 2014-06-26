@@ -2,6 +2,7 @@ package com.digitalpetri.ethernetip.client.util
 
 import java.util
 import java.util.concurrent.RejectedExecutionException
+
 import scala.concurrent.{Future, Promise}
 
 /**
@@ -10,7 +11,7 @@ import scala.concurrent.{Future, Promise}
  */
 class AsyncSemaphore protected (initialPermits: Int, maxWaiters: Option[Int]) {
 
-  import AsyncSemaphore._
+  import com.digitalpetri.ethernetip.client.util.AsyncSemaphore._
 
   def this(initialPermits: Int = 0) = this(initialPermits, None)
   def this(initialPermits: Int, maxWaiters: Int) = this(initialPermits, Some(maxWaiters))

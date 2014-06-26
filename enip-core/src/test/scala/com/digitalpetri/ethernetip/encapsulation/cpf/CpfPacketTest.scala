@@ -18,7 +18,7 @@
 
 package com.digitalpetri.ethernetip.encapsulation.cpf
 
-import com.digitalpetri.ethernetip.encapsulation.cpf.items.{UnconnectedDataItem, NullAddressItem}
+import com.digitalpetri.ethernetip.encapsulation.cpf.items.{NullAddressItem, UnconnectedDataItem}
 import com.digitalpetri.ethernetip.util.Buffers
 import org.scalatest.FunSuite
 

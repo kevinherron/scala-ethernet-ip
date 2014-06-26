@@ -2,11 +2,12 @@ package com.digitalpetri.ethernetip.client.cip.services
 
 import com.digitalpetri.ethernetip.cip.CipServiceCodes
 import com.digitalpetri.ethernetip.cip.services.MultipleServicePacket
-import com.digitalpetri.ethernetip.cip.services.MultipleServicePacket.{MultipleServicePacketResponse, MultipleServicePacketRequest}
-import com.digitalpetri.ethernetip.cip.structs.{MessageRouterResponse, MessageRouterRequest}
-import io.netty.buffer.{Unpooled, ByteBuf}
-import scala.util.{Failure, Success, Try}
+import com.digitalpetri.ethernetip.cip.services.MultipleServicePacket.{MultipleServicePacketRequest, MultipleServicePacketResponse}
+import com.digitalpetri.ethernetip.cip.structs.{MessageRouterRequest, MessageRouterResponse}
 import com.digitalpetri.ethernetip.client.cip.CipResponseException
+import io.netty.buffer.{ByteBuf, Unpooled}
+
+import scala.util.{Failure, Success, Try}
 
 class MultipleServicePacketService(request: MultipleServicePacketRequest)
   extends AbstractInvokableService[MultipleServicePacketResponse] {

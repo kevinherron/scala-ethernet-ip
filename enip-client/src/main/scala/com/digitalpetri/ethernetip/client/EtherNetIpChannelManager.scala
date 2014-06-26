@@ -18,6 +18,8 @@
 
 package com.digitalpetri.ethernetip.client
 
+import java.util.concurrent.atomic.AtomicReference
+
 import com.digitalpetri.ethernetip.client.util.AbstractChannelManager
 import com.digitalpetri.ethernetip.encapsulation.layers.{DispatchLayer, PacketLayer}
 import io.netty.bootstrap.Bootstrap
@@ -25,8 +27,8 @@ import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
-import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.{Future, ExecutionContext, Promise}
+
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class EtherNetIpChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) extends AbstractChannelManager {
 

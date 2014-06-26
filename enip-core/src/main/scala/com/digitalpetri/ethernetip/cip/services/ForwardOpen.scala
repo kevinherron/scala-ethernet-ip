@@ -16,15 +16,17 @@
 
 package com.digitalpetri.ethernetip.cip.services
 
-import com.digitalpetri.ethernetip.cip.CipClassCodes
-import com.digitalpetri.ethernetip.cip.epath.{ConnectionPoint, InstanceId, ClassId, PaddedEPath}
-import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.ConnectionType._
-import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Priority._
-import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Size.{VariableSize, FixedSize, Size}
-import com.digitalpetri.ethernetip.util.{TimeoutCalculator, Buffers}
-import io.netty.buffer.{Unpooled, ByteBuf}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+
+import com.digitalpetri.ethernetip.cip.CipClassCodes
+import com.digitalpetri.ethernetip.cip.epath.{ClassId, ConnectionPoint, InstanceId, PaddedEPath}
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.ConnectionType._
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Priority._
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Size.{FixedSize, Size, VariableSize}
+import com.digitalpetri.ethernetip.util.{Buffers, TimeoutCalculator}
+import io.netty.buffer.{ByteBuf, Unpooled}
+
 import scala.concurrent.duration.Duration
 import scala.util.Try
 

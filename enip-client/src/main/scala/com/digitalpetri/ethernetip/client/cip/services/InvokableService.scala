@@ -1,6 +1,7 @@
 package com.digitalpetri.ethernetip.client.cip.services
 
 import io.netty.buffer.ByteBuf
+
 import scala.concurrent.Future
 
 trait InvokableService[T] {

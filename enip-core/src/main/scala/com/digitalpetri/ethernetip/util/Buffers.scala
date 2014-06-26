@@ -16,8 +16,9 @@
 
 package com.digitalpetri.ethernetip.util
 
-import io.netty.buffer.{PooledByteBufAllocator, CompositeByteBuf, Unpooled, ByteBuf}
 import java.nio.ByteOrder
+
+import io.netty.buffer.{ByteBuf, CompositeByteBuf, PooledByteBufAllocator, Unpooled}
 
 object Buffers {
 

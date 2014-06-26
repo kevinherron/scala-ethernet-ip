@@ -21,6 +21,7 @@ package com.digitalpetri.ethernetip.client
 import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
 import io.netty.channel.EventLoopGroup
 import io.netty.util.HashedWheelTimer
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 

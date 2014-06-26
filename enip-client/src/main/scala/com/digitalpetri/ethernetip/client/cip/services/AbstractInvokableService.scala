@@ -20,7 +20,8 @@ package com.digitalpetri.ethernetip.client.cip.services
 
 import com.digitalpetri.ethernetip.cip.structs.MessageRouterResponse
 import com.digitalpetri.ethernetip.client.cip.CipResponseException
-import io.netty.buffer.{Unpooled, ByteBuf}
+import io.netty.buffer.{ByteBuf, Unpooled}
+
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 

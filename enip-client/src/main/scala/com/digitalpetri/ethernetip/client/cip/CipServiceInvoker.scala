@@ -5,6 +5,7 @@ import com.digitalpetri.ethernetip.cip.services.UnconnectedSend.UnconnectedSendR
 import com.digitalpetri.ethernetip.client.cip.services.{InvokableService, MultipleServicePacketService, UnconnectedSendService}
 import com.digitalpetri.ethernetip.client.util.AsyncSemaphore
 import io.netty.buffer.ByteBuf
+
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 

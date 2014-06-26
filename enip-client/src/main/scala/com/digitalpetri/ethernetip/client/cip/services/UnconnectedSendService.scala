@@ -5,7 +5,8 @@ import com.digitalpetri.ethernetip.cip.services.UnconnectedSend.UnconnectedSendR
 import com.digitalpetri.ethernetip.cip.structs.MessageRouterRequest
 import com.digitalpetri.ethernetip.util.Implicits.KestrelCombinator
 import io.netty.buffer.ByteBuf
-import scala.concurrent.{Promise, Future}
+
+import scala.concurrent.{Future, Promise}
 
 /**
   * The Unconnected_Send service shall allow an application to send a message to a device without first setting up a

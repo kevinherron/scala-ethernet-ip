@@ -18,9 +18,10 @@
 
 package com.digitalpetri.ethernetip.encapsulation.commands
 
-import com.digitalpetri.ethernetip.encapsulation.cpf.CpfPacket
-import com.digitalpetri.ethernetip.encapsulation.cpf.items.{Sockaddr, CipIdentityItem}
 import java.net.InetAddress
+
+import com.digitalpetri.ethernetip.encapsulation.cpf.CpfPacket
+import com.digitalpetri.ethernetip.encapsulation.cpf.items.{CipIdentityItem, Sockaddr}
 import org.scalatest.FunSuite
 
 class ListIdentityTest extends FunSuite {

@@ -18,8 +18,9 @@
 
 package com.digitalpetri.ethernetip.encapsulation.cpf.items
 
-import org.scalatest.FunSuite
 import java.net.InetAddress
+
+import org.scalatest.FunSuite
 
 class SockaddrItemT2oTest extends FunSuite {
 

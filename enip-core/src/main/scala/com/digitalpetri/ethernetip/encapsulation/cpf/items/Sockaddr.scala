@@ -16,10 +16,11 @@
 
 package com.digitalpetri.ethernetip.encapsulation.cpf.items
 
-import com.digitalpetri.ethernetip.util.Buffers
-import io.netty.buffer.ByteBuf
 import java.net.InetAddress
 import java.nio.ByteOrder
+
+import com.digitalpetri.ethernetip.util.Buffers
+import io.netty.buffer.ByteBuf
 
 case class Sockaddr(sinFamily: Int, sinPort: Int, sinAddr: InetAddress, sinZero: Long = 0)
 

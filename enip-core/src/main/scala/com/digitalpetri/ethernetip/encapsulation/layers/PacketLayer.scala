@@ -16,13 +16,15 @@
 
 package com.digitalpetri.ethernetip.encapsulation.layers
 
+import java.nio.ByteOrder
+import java.util
+
 import com.digitalpetri.ethernetip.encapsulation.EncapsulationPacket
 import com.typesafe.scalalogging.slf4j.Logging
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageCodec
-import java.nio.ByteOrder
-import java.util
+
 import scala.util.{Failure, Success}
 
 class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with Logging {

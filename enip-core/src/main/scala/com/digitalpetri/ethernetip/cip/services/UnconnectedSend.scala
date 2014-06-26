@@ -18,8 +18,9 @@ package com.digitalpetri.ethernetip.cip.services
 
 import com.digitalpetri.ethernetip.cip.CipClassCodes
 import com.digitalpetri.ethernetip.cip.epath._
-import com.digitalpetri.ethernetip.util.{TimeoutCalculator, Buffers}
+import com.digitalpetri.ethernetip.util.{Buffers, TimeoutCalculator}
 import io.netty.buffer.ByteBuf
+
 import scala.concurrent.duration.Duration
 
 object UnconnectedSend {

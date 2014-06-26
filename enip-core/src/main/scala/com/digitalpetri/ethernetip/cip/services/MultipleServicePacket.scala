@@ -17,7 +17,7 @@
 package com.digitalpetri.ethernetip.cip.services
 
 import com.digitalpetri.ethernetip.cip.CipClassCodes
-import com.digitalpetri.ethernetip.cip.epath.{InstanceId, ClassId, PaddedEPath}
+import com.digitalpetri.ethernetip.cip.epath.{ClassId, InstanceId, PaddedEPath}
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 

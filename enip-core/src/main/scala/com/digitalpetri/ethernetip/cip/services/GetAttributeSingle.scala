@@ -17,7 +17,8 @@
 package com.digitalpetri.ethernetip.cip.services
 
 import com.digitalpetri.ethernetip.util.Buffers
-import io.netty.buffer.{ByteBufUtil, ByteBuf}
+import io.netty.buffer.{ByteBuf, ByteBufUtil}
+
 import scala.util.Try
 
 object GetAttributeSingle {

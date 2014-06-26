@@ -22,7 +22,8 @@ import com.digitalpetri.ethernetip.cip.CipServiceCodes
 import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
 import com.digitalpetri.ethernetip.cip.services.GetAttributeSingle.GetAttributeSingleResponse
 import com.digitalpetri.ethernetip.cip.structs.MessageRouterRequest
-import io.netty.buffer.{Unpooled, ByteBuf}
+import io.netty.buffer.{ByteBuf, Unpooled}
+
 import scala.util.Try
 
 class GetAttributeSingleService(requestPath: PaddedEPath) extends AbstractInvokableService[GetAttributeSingleResponse] {
