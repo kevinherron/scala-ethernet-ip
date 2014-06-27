@@ -20,10 +20,12 @@ package com.digitalpetri.ethernetip.client.cip
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
+import com.digitalpetri.ethernetip.cip.CipClassCodes
+import com.digitalpetri.ethernetip.cip.epath.{ClassId, InstanceId, PaddedEPath}
+import com.digitalpetri.ethernetip.cip.services.ForwardClose.{ForwardCloseRequest, ForwardCloseResponse}
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen.ForwardOpenRequest
-import com.digitalpetri.ethernetip.client.cip.services.ForwardOpenService
+import com.digitalpetri.ethernetip.client.cip.services.{ForwardCloseService, ForwardOpenService}
 import com.digitalpetri.ethernetip.client.util.AsyncQueue
 import com.typesafe.scalalogging.StrictLogging
 import io.netty.util.{Timeout, TimerTask}
@@ -146,6 +148,37 @@ trait CipConnectionManager extends StrictLogging {
       case Failure(ex) =>
         logger.error(s"Failed to open CipConnection: ${ex.getMessage}")
         promise.failure(ex)
+    }
+
+    promise.future
+  }
+
+  private def forwardClose(connection: CipConnection): Future[ForwardCloseResponse] = {
+    val promise = Promise[ForwardCloseResponse]()
+
+    val segments = config.connectionPath.segments :+ ClassId(CipClassCodes.MessageRouterObject) :+ InstanceId(1)
+    val connectionPath = PaddedEPath(segments: _*)
+
+    val request = ForwardCloseRequest(
+      connectionTimeout       = config.connectionTimeout,
+      connectionSerialNumber  = connection.serialNumber,
+      originatorVendorId      = config.vendorId,
+      originatorSerialNumber  = config.serialNumber,
+      connectionPath          = connectionPath)
+
+    val service = new ForwardCloseService(request)
+
+    sendUnconnectedData(service.getRequestData).onComplete {
+      case Success(responseData) => service.setResponseData(responseData)
+      case Failure(ex) => service.setResponseFailure(ex)
+    }
+
+    service.response.onComplete {
+      case Success(response) =>
+        logger.debug(s"CipConnection closed: $connection")
+        promise.success(response)
+
+      case Failure(ex) => promise.failure(ex)
     }
 
     promise.future
