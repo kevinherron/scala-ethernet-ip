@@ -28,7 +28,7 @@ import com.digitalpetri.ethernetip.encapsulation.commands.{SendRRData, SendUnitD
 import com.digitalpetri.ethernetip.encapsulation.cpf.CpfPacket
 import com.digitalpetri.ethernetip.encapsulation.cpf.items.{ConnectedAddressItem, ConnectedDataItem, NullAddressItem, UnconnectedDataItem}
 import com.digitalpetri.ethernetip.util.Buffers
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.StrictLogging
 import io.netty.buffer.ByteBuf
 import io.netty.util.{Timeout, TimerTask}
 
@@ -36,7 +36,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
-class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(config) with CipServiceInvoker with Logging {
+class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(config) with CipServiceInvoker with StrictLogging {
 
   private implicit val executionContext = config.executionContext
 

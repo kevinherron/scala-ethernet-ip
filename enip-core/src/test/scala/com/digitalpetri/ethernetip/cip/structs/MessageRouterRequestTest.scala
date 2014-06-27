@@ -4,7 +4,7 @@ import org.scalatest.FunSuite
 
 class MessageRouterRequestTest extends FunSuite {
 
-  // TODO Fix this
+//  TODO Fix this
 //  test("MessageRouterRequest is round-trip encodable/decodable") {
 //    val data = Buffers.unpooled().writeBytes(Array[Byte](1, 2, 3)).markReaderIndex()
 //

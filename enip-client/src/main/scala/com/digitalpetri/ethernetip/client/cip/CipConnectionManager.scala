@@ -25,14 +25,14 @@ import com.digitalpetri.ethernetip.cip.services.ForwardOpen
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen.ForwardOpenRequest
 import com.digitalpetri.ethernetip.client.cip.services.ForwardOpenService
 import com.digitalpetri.ethernetip.client.util.AsyncQueue
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.StrictLogging
 import io.netty.util.{Timeout, TimerTask}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Random, Success}
 
-trait CipConnectionManager extends Logging {
+trait CipConnectionManager extends StrictLogging {
   this: CipClient =>
 
   private implicit val executionContext = config.executionContext

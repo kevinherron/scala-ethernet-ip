@@ -25,7 +25,7 @@ import com.digitalpetri.ethernetip.client.util.ScalaMetricSet
 import com.digitalpetri.ethernetip.encapsulation.commands._
 import com.digitalpetri.ethernetip.encapsulation.layers.PacketReceiver
 import com.digitalpetri.ethernetip.encapsulation.{EipSuccess, EncapsulationPacket}
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.StrictLogging
 import io.netty.channel.{Channel, ChannelFuture, ChannelFutureListener}
 import io.netty.util.{Timeout, TimerTask}
 
@@ -33,7 +33,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
-class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver with Logging {
+class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver with StrictLogging {
 
   protected val channelManager = new EtherNetIpChannelManager(this, config)
 

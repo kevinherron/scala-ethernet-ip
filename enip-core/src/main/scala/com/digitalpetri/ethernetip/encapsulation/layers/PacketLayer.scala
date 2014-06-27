@@ -20,14 +20,14 @@ import java.nio.ByteOrder
 import java.util
 
 import com.digitalpetri.ethernetip.encapsulation.EncapsulationPacket
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.StrictLogging
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageCodec
 
 import scala.util.{Failure, Success}
 
-class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with Logging {
+class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with StrictLogging {
 
   def encode(ctx: ChannelHandlerContext, msg: EncapsulationPacket, out: ByteBuf): Unit = {
     val buffer = out.order(ByteOrder.LITTLE_ENDIAN)
