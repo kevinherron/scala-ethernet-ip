@@ -34,10 +34,11 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Random, Success}
 
-trait CipConnectionManager extends StrictLogging {
-  this: CipClient =>
+class CipConnectionManager(client: CipClient) extends StrictLogging {
 
-  private implicit val executionContext = config.executionContext
+  private implicit val executionContext = client.config.executionContext
+
+  private val config = client.config
 
   private val count = new AtomicInteger(0)
 
@@ -126,7 +127,7 @@ trait CipConnectionManager extends StrictLogging {
 
     val service = new ForwardOpenService(request)
 
-    sendUnconnectedData(service.getRequestData).onComplete {
+    client.sendUnconnectedData(service.getRequestData).onComplete {
       case Success(responseData) => service.setResponseData(responseData)
       case Failure(ex) => service.setResponseFailure(ex)
     }
@@ -168,7 +169,7 @@ trait CipConnectionManager extends StrictLogging {
 
     val service = new ForwardCloseService(request)
 
-    sendUnconnectedData(service.getRequestData).onComplete {
+    client.sendUnconnectedData(service.getRequestData).onComplete {
       case Success(responseData) => service.setResponseData(responseData)
       case Failure(ex) => service.setResponseFailure(ex)
     }

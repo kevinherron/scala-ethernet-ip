@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
 
 import com.digitalpetri.ethernetip.cip.CipClassCodes
 import com.digitalpetri.ethernetip.cip.epath._
-import com.digitalpetri.ethernetip.client.cip.CipClient
+import com.digitalpetri.ethernetip.client.cip.{CipConnectionManager, CipClient}
 import com.digitalpetri.ethernetip.client.cip.services.{GetAttributeListService, GetAttributeSingleService}
 
 import scala.concurrent.ExecutionContext
@@ -42,6 +42,7 @@ object EtherNetIpClientMain extends App {
     connectionTimeout = Duration(15, TimeUnit.SECONDS))
 
   val client = new CipClient(config)
+  val connectionManager = new CipConnectionManager(client)
 
   val future = for {
     identity    <- client.listIdentity()
@@ -70,7 +71,7 @@ object EtherNetIpClientMain extends App {
       attributeSizes  = Seq(2),
       requestPath     = PaddedEPath(ClassId(CipClassCodes.MessageRouterObject), InstanceId(0x01)))
 
-    val serviceFuture = client.invokeService(service)
+    val serviceFuture = client.invokeService(service)(None)
 
     serviceFuture.onComplete {
       case Success(response) => println(response)
@@ -86,7 +87,7 @@ object EtherNetIpClientMain extends App {
 
     val service = new GetAttributeSingleService(requestPath)
 
-    val serviceFuture = client.invokeService(service, connected = true)
+    val serviceFuture = client.invokeService(service)(None)
 
     serviceFuture.onComplete {
       case Success(response) =>

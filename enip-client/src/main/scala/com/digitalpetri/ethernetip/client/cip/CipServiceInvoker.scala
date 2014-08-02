@@ -9,82 +9,86 @@ import io.netty.buffer.ByteBuf
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-trait CipServiceInvoker extends CipConnectionManager {
+trait CipServiceInvoker {
   this: CipClient =>
 
   private implicit val executionContext = config.executionContext
 
   private val unconnectedSemaphore = new AsyncSemaphore(config.concurrency)
 
-  def invokeService[T](service: InvokableService[T], connected: Boolean = false): Future[T] = {
-    if (connected) {
-      /*
-       * Connected Explicit Message
-       */
-      acquireConnection().onComplete {
-        case Success(connection) =>
-          def _send(requestData: ByteBuf, o2tConnectionId: Int) {
-            sendConnectedData(requestData, connection.o2tConnectionId).onComplete {
-              case Success(responseData) =>
-                service.setResponseData(responseData) match {
-                  case Some(d) => _send(d, connection.o2tConnectionId)
-                  case None => releaseConnection(connection)
-                }
+  def invokeService[T](service: InvokableService[T])
+                      (connectionManager: Option[CipConnectionManager]): Future[T] = {
 
-              case Failure(ex) =>
-                releaseConnection(connection)
-                service.setResponseFailure(ex)
-            }
-          }
+    connectionManager match {
+      case Some(manager) =>
+        /*
+         * Connected Explicit Message
+         */
+        manager.acquireConnection().onComplete {
+          case Success(connection) =>
+            def _send(requestData: ByteBuf, o2tConnectionId: Int) {
+              sendConnectedData(requestData, connection.o2tConnectionId).onComplete {
+                case Success(responseData) =>
+                  service.setResponseData(responseData) match {
+                    case Some(d) => _send(d, connection.o2tConnectionId)
+                    case None => manager.releaseConnection(connection)
+                  }
 
-          _send(service.getRequestData, connection.o2tConnectionId)
-
-        case Failure(ex) => service.setResponseFailure(ex)
-      }
-
-    } else {
-      /*
-       * Unconnected Explicit Message
-       */
-      unconnectedSemaphore.acquire().onComplete {
-        case Success(permit) =>
-          def _send(requestData: ByteBuf) {
-            val request = UnconnectedSendRequest(
-              timeout         = config.requestTimeout,
-              embeddedRequest = requestData,
-              connectionPath  = config.connectionPath)
-
-            val unconnectedService = new UnconnectedSendService(request)
-
-            unconnectedService.response.onComplete {
-              case Success(responseData) =>
-                service.setResponseData(responseData) match {
-                  case Some(d) => _send(d)
-                  case None => permit.release()
-                }
-
-              case Failure(ex) =>
-                permit.release()
-                service.setResponseFailure(ex)
+                case Failure(ex) =>
+                  manager.releaseConnection(connection)
+                  service.setResponseFailure(ex)
+              }
             }
 
-            sendUnconnectedData(unconnectedService.getRequestData).onComplete {
-              case Success(responseData) => unconnectedService.setResponseData(responseData)
-              case Failure(ex) => unconnectedService.setResponseFailure(ex)
+            _send(service.getRequestData, connection.o2tConnectionId)
+
+          case Failure(ex) => service.setResponseFailure(ex)
+        }
+
+      case None =>
+        /*
+         * Unconnected Explicit Message
+         */
+        unconnectedSemaphore.acquire().onComplete {
+          case Success(permit) =>
+            def _send(requestData: ByteBuf) {
+              val request = UnconnectedSendRequest(
+                timeout         = config.requestTimeout,
+                embeddedRequest = requestData,
+                connectionPath  = config.connectionPath)
+
+              val unconnectedService = new UnconnectedSendService(request)
+
+              unconnectedService.response.onComplete {
+                case Success(responseData) =>
+                  service.setResponseData(responseData) match {
+                    case Some(d) => _send(d)
+                    case None => permit.release()
+                  }
+
+                case Failure(ex) =>
+                  permit.release()
+                  service.setResponseFailure(ex)
+              }
+
+              sendUnconnectedData(unconnectedService.getRequestData).onComplete {
+                case Success(responseData) => unconnectedService.setResponseData(responseData)
+                case Failure(ex) => unconnectedService.setResponseFailure(ex)
+              }
             }
-          }
 
-          _send(service.getRequestData)
+            _send(service.getRequestData)
 
-        case Failure(ex) => service.setResponseFailure(ex)
-      }
-
+          case Failure(ex) => service.setResponseFailure(ex)
+        }
     }
 
     service.response
   }
 
-  def invokeMultiple(services: Seq[InvokableService[_]], connected: Boolean): Future[_] = {
+  def invokeMultiple(services: Seq[InvokableService[_]])
+                    (connectionManager: Option[CipConnectionManager]): Future[_] = {
+
     def _invoke(services: Seq[InvokableService[_]], requests: Seq[ByteBuf]): Future[_] = {
       assert(services.size == requests.size)
 
@@ -114,7 +118,7 @@ trait CipServiceInvoker extends CipConnectionManager {
         case Failure(ex) => services.foreach(_.setResponseFailure(ex))
       }
 
-      invokeService(service, connected)
+      invokeService(service)(connectionManager)
     }
 
     _invoke(services, services.map(_.getRequestData))
