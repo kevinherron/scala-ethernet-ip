@@ -35,7 +35,7 @@ trait CipServiceInvoker {
                   }
 
                 case Failure(ex) =>
-                  manager.releaseConnection(connection)
+                  manager.removeConnection(connection)
                   service.setResponseFailure(ex)
               }
             }

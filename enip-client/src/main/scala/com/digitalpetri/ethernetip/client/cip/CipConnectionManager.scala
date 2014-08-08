@@ -94,6 +94,18 @@ class CipConnectionManager(client: CipClient) extends StrictLogging {
     }
   }
 
+  def removeConnection(connection: CipConnection) {
+    logger.trace(s"CipConnection removed: $connection")
+
+    timeouts.remove(connection.o2tConnectionId) match {
+      case Some(timeout) =>
+        timeout.cancel()
+        count.decrementAndGet()
+
+      case None => // It was already removed by the timeout expiration.
+    }
+  }
+
   private def offerConnection(connection: CipConnection) {
     val timeout = config.wheelTimer.newTimeout(new TimerTask {
       def run(t: Timeout): Unit = {
@@ -147,7 +159,7 @@ class CipConnectionManager(client: CipClient) extends StrictLogging {
         promise.success(connection)
 
       case Failure(ex) =>
-        logger.error(s"Failed to open CipConnection: ${ex.getMessage}")
+        logger.debug(s"Failed to open CipConnection: ${ex.getMessage}")
         promise.failure(ex)
     }
 
