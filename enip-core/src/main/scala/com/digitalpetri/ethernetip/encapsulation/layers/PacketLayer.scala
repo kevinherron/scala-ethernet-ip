@@ -63,6 +63,11 @@ class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with StrictLog
     in.order(ByteOrder.LITTLE_ENDIAN).getUnsignedShort(startIndex + PacketLayer.LengthOffset)
   }
 
+  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
+    logger.error(s"Exception caught at encapsulation layer: ${cause.getMessage}", cause)
+    ctx.close()
+  }
+
 }
 
 object PacketLayer {
