@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package com.digitalpetri.ethernetip.encapsulation.layers
+package com.digitalpetri.ethernetip.client.handlers
 
 import com.digitalpetri.ethernetip.encapsulation.EncapsulationPacket
 import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
 
-class DispatchLayer(receiver: PacketReceiver) extends SimpleChannelInboundHandler[EncapsulationPacket] {
+import scala.concurrent.ExecutionContext
 
-  def channelRead0(ctx: ChannelHandlerContext, packet: EncapsulationPacket): Unit = {
-    receiver.onPacketReceived(packet)
+class DispatchHandler(packetReceiver: PacketReceiver, executionContext: ExecutionContext)
+  extends SimpleChannelInboundHandler[EncapsulationPacket] {
+
+  override def channelRead0(ctx: ChannelHandlerContext, packet: EncapsulationPacket): Unit = {
+    executionContext.execute(new Runnable {
+      override def run(): Unit = packetReceiver.onPacketReceived(packet)
+    })
   }
 
 }
+
 
 trait PacketReceiver {
 
@@ -40,3 +46,4 @@ trait PacketReceiver {
   def onPacketReceived(packet: EncapsulationPacket)
 
 }
+

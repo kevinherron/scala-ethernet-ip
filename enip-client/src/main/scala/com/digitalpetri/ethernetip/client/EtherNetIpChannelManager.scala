@@ -18,25 +18,20 @@
 
 package com.digitalpetri.ethernetip.client
 
-import java.util.concurrent.atomic.AtomicReference
-
+import com.digitalpetri.ethernetip.client.handlers.{DispatchHandler, SessionHandler}
 import com.digitalpetri.ethernetip.client.util.AbstractChannelManager
-import com.digitalpetri.ethernetip.encapsulation.layers.{DispatchLayer, PacketLayer}
+import com.digitalpetri.ethernetip.encapsulation.handlers.PacketHandler
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Promise}
 
 class EtherNetIpChannelManager(client: EtherNetIpClient, config: EtherNetIpClientConfig) extends AbstractChannelManager {
 
-  type PostConnectCallback = (EtherNetIpClient) => Unit
-
   implicit val executionContext: ExecutionContext = config.executionContext
-
-  private val postConnectCallbacks = new AtomicReference[Seq[PostConnectCallback]](Seq.empty)
 
   /**
    * Make a connection, completing the Promise with the resulting Channel.
@@ -47,8 +42,9 @@ class EtherNetIpChannelManager(client: EtherNetIpClient, config: EtherNetIpClien
     val initializer = new ChannelInitializer[SocketChannel] {
       def initChannel(channel: SocketChannel) {
         channel.pipeline.addLast(new LoggingHandler(s"${classOf[EtherNetIpClient]}.ByteLogger", LogLevel.TRACE))
-        channel.pipeline.addLast(new PacketLayer)
-        channel.pipeline.addLast(new DispatchLayer(client))
+        channel.pipeline.addLast(new PacketHandler)
+        channel.pipeline.addLast(new SessionHandler)
+        channel.pipeline.addLast(new DispatchHandler(client, config.executionContext))
       }
     }
 
@@ -67,24 +63,6 @@ class EtherNetIpChannelManager(client: EtherNetIpClient, config: EtherNetIpClien
         }
       }
     })
-  }
-
-  def addPostConnectCallback(callback: PostConnectCallback) = synchronized {
-    postConnectCallbacks.set(postConnectCallbacks.get() :+ callback)
-  }
-
-  def removePostConnectCallback(callback: PostConnectCallback) = synchronized {
-    postConnectCallbacks.set(postConnectCallbacks.get().filter(_ != callback))
-  }
-
-  /** The channel is open and the state is soon to be Connected; maybe do something? */
-  override def preConnectedState(channel: Channel): Future[Any] = {
-    client.registerSession(channel)
-  }
-
-  /** The state is now Connected; maybe do something? */
-  override def postConnectedState(): Unit = synchronized {
-    postConnectCallbacks.get().foreach(callback => callback(client))
   }
 
 }

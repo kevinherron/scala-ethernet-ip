@@ -21,9 +21,9 @@ package com.digitalpetri.ethernetip.client
 import java.util.concurrent.atomic.AtomicLong
 
 import com.codahale.metrics.{Counter, MetricRegistry}
+import com.digitalpetri.ethernetip.client.handlers.PacketReceiver
 import com.digitalpetri.ethernetip.client.util.ScalaMetricSet
 import com.digitalpetri.ethernetip.encapsulation.commands._
-import com.digitalpetri.ethernetip.encapsulation.layers.PacketReceiver
 import com.digitalpetri.ethernetip.encapsulation.{EipSuccess, EncapsulationPacket}
 import com.typesafe.scalalogging.StrictLogging
 import io.netty.channel.{Channel, ChannelFuture, ChannelFutureListener}
@@ -39,31 +39,8 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
 
   protected val timeoutCounter = new Counter()
 
-  private val sessionHandle = new AtomicLong(0L)
   private val senderContext = new AtomicLong(0L)
   private val pendingPackets = new TrieMap[Long, Promise[EncapsulationPacket]]()
-
-  private[client] def registerSession(channel: Channel): Future[RegisterSession] = {
-    implicit val ec = config.executionContext
-
-    val promise = Promise[RegisterSession]()
-
-    sendCommand(RegisterSession(), Some(channel)).onComplete {
-      case Success(packet) =>
-        packet.data match {
-          case Some(cmd: RegisterSession) =>
-            sessionHandle.set(packet.sessionHandle)
-            promise.success(cmd)
-
-          case Some(cmd) => promise.failure(new Exception(s"unexpected response: $cmd"))
-          case None => promise.failure(new Exception(s"error response: ${packet.status}"))
-        }
-
-      case Failure(ex) => promise.failure(ex)
-    }
-
-    promise.future
-  }
 
   def unRegisterSession(): Future[UnRegisterSession] = {
     sendCommand(UnRegisterSession())
@@ -159,7 +136,7 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
     def write(ch: Channel) {
       val packet = EncapsulationPacket(
         commandCode   = command.code.value,
-        sessionHandle = sessionHandle.get(),
+        sessionHandle = 0L,
         senderContext = 0L,
         data          = Some(command))
 
@@ -215,7 +192,7 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
 
       val packet = EncapsulationPacket(
         commandCode   = command.code.value,
-        sessionHandle = sessionHandle.get(),
+        sessionHandle = 0L,
         senderContext = context,
         data          = Some(command))
 

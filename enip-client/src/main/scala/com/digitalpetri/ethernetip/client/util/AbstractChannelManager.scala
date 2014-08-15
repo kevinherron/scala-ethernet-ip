@@ -41,7 +41,7 @@ abstract class AbstractChannelManager {
   def getChannel: Either[Future[Channel], Channel] = {
     state.get match {
       case s@Idle =>
-        val p: Promise[Channel] = promise()
+        val p: Promise[Channel] = Promise()
         val nextState = Connecting(p)
         if (state.compareAndSet(s, nextState)) Left(connect(nextState, p)) else getChannel
 
@@ -58,20 +58,12 @@ abstract class AbstractChannelManager {
 
     channelPromise.future.onComplete {
       case Success(ch) =>
-        preConnectedState(ch).onComplete {
-          case _ => moveToConnectedState()
-        }
+        ch.closeFuture().addListener(new ChannelFutureListener {
+          override def operationComplete(future: ChannelFuture): Unit = state.set(Idle)
+        })
 
-        def moveToConnectedState() {
-          ch.closeFuture().addListener(new ChannelFutureListener {
-            override def operationComplete(future: ChannelFuture): Unit = state.set(Idle)
-          })
-
-          state.set(Connected(ch))
-          promise.success(ch)
-
-          postConnectedState()
-        }
+        state.set(Connected(ch))
+        promise.success(ch)
 
       case Failure(ex) =>
         state.compareAndSet(expectedState, Idle)
@@ -85,12 +77,6 @@ abstract class AbstractChannelManager {
 
   /** Make a connection, completing the Promise with the resulting Channel. */
   def connect(channelPromise: Promise[Channel]): Unit
-
-  /** The channel is open and the state is soon to be Connected; maybe do something? */
-  def preConnectedState(channel: Channel): Future[Any] = { Future.successful(Unit) }
-
-  /** The state is now Connected; maybe do something? */
-  def postConnectedState(): Unit = {}
 
   /** ExecutionContext to run completion callbacks on. */
   implicit val executionContext: ExecutionContext

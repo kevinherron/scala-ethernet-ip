@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.digitalpetri.ethernetip.encapsulation.layers
+package com.digitalpetri.ethernetip.encapsulation.handlers
 
 import java.nio.ByteOrder
 import java.util
@@ -27,7 +27,7 @@ import io.netty.handler.codec.ByteToMessageCodec
 
 import scala.util.{Failure, Success}
 
-class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with StrictLogging {
+class PacketHandler extends ByteToMessageCodec[EncapsulationPacket] with StrictLogging {
 
   def encode(ctx: ChannelHandlerContext, msg: EncapsulationPacket, out: ByteBuf): Unit = {
     val buffer = out.order(ByteOrder.LITTLE_ENDIAN)
@@ -38,8 +38,8 @@ class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with StrictLog
   def decode(ctx: ChannelHandlerContext, in: ByteBuf, out: util.List[AnyRef]): Unit = {
     var startIndex = in.readerIndex()
 
-    while (in.readableBytes() >= PacketLayer.HeaderSize &&
-           in.readableBytes() >= PacketLayer.HeaderSize + getLength(in, startIndex)) {
+    while (in.readableBytes() >= PacketHandler.HeaderSize &&
+           in.readableBytes() >= PacketHandler.HeaderSize + getLength(in, startIndex)) {
 
       val buffer = in.order(ByteOrder.LITTLE_ENDIAN)
 
@@ -51,7 +51,7 @@ class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with StrictLog
           logger.error("Error decoding packet.", ex)
 
           // Advance past any bytes we should have read but didn't...
-          val endIndex = startIndex + PacketLayer.HeaderSize + getLength(in, startIndex)
+          val endIndex = startIndex + PacketHandler.HeaderSize + getLength(in, startIndex)
           buffer.readerIndex(endIndex)
       }
 
@@ -60,7 +60,7 @@ class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with StrictLog
   }
 
   private def getLength(in: ByteBuf, startIndex: Int): Int = {
-    in.order(ByteOrder.LITTLE_ENDIAN).getUnsignedShort(startIndex + PacketLayer.LengthOffset)
+    in.order(ByteOrder.LITTLE_ENDIAN).getUnsignedShort(startIndex + PacketHandler.LengthOffset)
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
@@ -70,7 +70,7 @@ class PacketLayer extends ByteToMessageCodec[EncapsulationPacket] with StrictLog
 
 }
 
-object PacketLayer {
+object PacketHandler {
   val HeaderSize = 24
   val LengthOffset = 2
 }
