@@ -78,7 +78,7 @@ class SessionHandler() extends MessageToMessageCodec[EncapsulationPacket, Encaps
   }
 
   private def drainPacketQueue(ctx: ChannelHandlerContext) {
-    packetQueue.foreach(ctx.channel.write)
+    packetQueue.foreach(packet => ctx.channel.write(packet.copy(sessionHandle = sessionHandle)))
     packetQueue.clear()
     ctx.flush()
   }
