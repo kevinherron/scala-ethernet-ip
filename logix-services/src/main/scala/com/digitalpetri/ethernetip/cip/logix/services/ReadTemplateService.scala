@@ -27,7 +27,7 @@ import com.digitalpetri.ethernetip.cip.structs.{MessageRouterRequest, MessageRou
 import com.digitalpetri.ethernetip.client.cip.services.AbstractMultiInvokableService
 import com.digitalpetri.ethernetip.util.Buffers
 import com.typesafe.scalalogging.StrictLogging
-import io.netty.buffer.{ByteBufUtil, ByteBuf}
+import io.netty.buffer.ByteBuf
 import io.netty.util.ReferenceCountUtil
 
 class ReadTemplateService(attributes: TemplateAttributes, requestPath: PaddedEPath)
@@ -39,8 +39,8 @@ class ReadTemplateService(attributes: TemplateAttributes, requestPath: PaddedEPa
 
   private def buildRequestData(offset: Int = 0): ByteBuf = {
     var bytesToRead = (attributes.objectDefinitionSize * 4) - 23
+    bytesToRead = roundUp(bytesToRead, 4) + 4
     bytesToRead -= totalBytesRead()
-    bytesToRead = round(bytesToRead, 4) + 4
 
     val request = ReadTemplateServiceRequest(offset, bytesToRead)
 
@@ -56,8 +56,14 @@ class ReadTemplateService(attributes: TemplateAttributes, requestPath: PaddedEPa
     buffers.get().foldLeft(0)((total, b) => total + b.readableBytes())
   }
 
-  private def round(m: Int, n: Int): Int = {
-    ((m + n - 1) / n) * n
+  /**
+   * Round `n` up to the nearest multiple `m`.
+   * @param n the number to round.
+   * @param m the multiple to up to.
+   * @return `n` rounded up to the nearest multiple `m`.
+   */
+  private def roundUp(n: Int, m: Int): Int = {
+    ((n + m - 1) / m) * m
   }
 
   /**
