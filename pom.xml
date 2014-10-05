@@ -62,7 +62,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <netty.version>4.0.21.Final</netty.version>
-        <scala.version>2.11.1</scala.version>
+        <scala.version>2.11.2</scala.version>
         <scalalogging.version>3.0.0</scalalogging.version>
         <scalatest.version>2.2.0</scalatest.version>
         <slf4j.version>1.7.5</slf4j.version>

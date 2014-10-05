@@ -111,7 +111,7 @@ class CipClient(val config: EtherNetIpClientConfig) extends EtherNetIpClient(con
       case ConnectedAddressItem(connectionId) :: ConnectedDataItem(buffer) :: Nil =>
         val packet = ConnectedPacket.decode(buffer)
 
-        pending.get(packet.sequenceNumber) match {
+        pending.remove(packet.sequenceNumber) match {
           case Some(promise) => promise.success(packet.data)
           case None => logger.debug(s"Received unmatched connected data. connectionId=$connectionId, sequenceNumber=${packet.sequenceNumber}")
         }
