@@ -44,14 +44,14 @@ object TagReader {
     tag match {
       case atomicTag: AtomicTag =>
         if (atomicTag.dimensions.length > 0) {
-          atomicTag.children.map(readTag(_, buffer)).flatten
+          atomicTag.children.flatMap(readTag(_, buffer))
         } else {
           readAtomicTag(atomicTag, buffer)
         }
 
       case structuredTag: StructuredTag =>
         if (structuredTag.dimensions.length > 0) {
-          structuredTag.children.map(readTag(_, buffer)).flatten
+          structuredTag.children.flatMap(readTag(_, buffer))
         } else {
           readStructuredTag(structuredTag, buffer)
         }
@@ -59,27 +59,31 @@ object TagReader {
   }
 
   private def readAtomicTag(atomicTag: AtomicTag, buffer: ByteBuf): Seq[(LogixTag, Any)] = {
-    val value = atomicTag.tagType match {
+    atomicTag.tagType match {
       case t: CipBool =>
         val hostByte = buffer.readByte()
-        ((hostByte >> t.bitIndex) & 1) == 1
+        val value = ((hostByte >> t.bitIndex) & 1) == 1
+        Seq((atomicTag, value))
 
       /* Signed types */
-      case CipSInt => buffer.readByte()
-      case CipInt => buffer.readShort()
-      case CipDInt => buffer.readInt()
-      case CipDWord => buffer.readInt()
-      case CipLInt => buffer.readLong()
+      case CipSInt  => Seq((atomicTag, buffer.readByte()))
+      case CipInt   => Seq((atomicTag, buffer.readShort()))
+      case CipDInt  => Seq((atomicTag, buffer.readInt()))
+      case CipLInt  => Seq((atomicTag, buffer.readLong()))
 
-      /* Floating point */
-      case CipReal => buffer.readFloat()
-      case CipLReal => buffer.readDouble()
+      /* Unsigned types */
+      case CipUSInt => Seq((atomicTag, buffer.readUnsignedByte()))
+      case CipUInt  => Seq((atomicTag, buffer.readUnsignedShort()))
+      case CipUDInt => Seq((atomicTag, buffer.readUnsignedInt()))
+      case CipULInt => Seq((atomicTag, buffer.readLong()))
 
-      case tagType =>
-        throw new Exception(s"cannot read ${atomicTag.name} atomically as $tagType")
+      /* Floats, words */
+      case CipReal  => Seq((atomicTag, buffer.readFloat()))
+      case CipLReal => Seq((atomicTag, buffer.readDouble()))
+      case CipDWord => Seq((atomicTag, buffer.readInt()))
+
+      case tagType  => Seq.empty
     }
-
-    Seq((atomicTag, value))
   }
 
   private def readStructuredTag(structuredTag: StructuredTag, buffer: ByteBuf): Seq[(LogixTag, Any)] = {
