@@ -23,6 +23,7 @@ import com.digitalpetri.ethernetip.cip.CipClassCodes
 import com.digitalpetri.ethernetip.cip.epath.{ClassId, ConnectionPoint, InstanceId, PaddedEPath}
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.ConnectionType._
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Priority._
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Size
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Size.{FixedSize, Size, VariableSize}
 import com.digitalpetri.ethernetip.util.{Buffers, TimeoutCalculator}
 import io.netty.buffer.{ByteBuf, Unpooled}
@@ -67,6 +68,52 @@ object ForwardOpen {
                                  reserved: Byte = 0,
                                  applicationReply: ByteBuf)
 
+  def intToParameters(parameters: Int): NetworkConnectionParameters = {
+    val connectionSize = parameters & 0x1FF
+
+    val sizeType = {
+      val bit = ((parameters >> 9) & 1) == 1
+      if (bit) Size.VariableSize else Size.FixedSize
+    }
+
+    val priority = {
+      val bits = (parameters >> 10) & 3
+
+      bits match {
+        case 0 => Low
+        case 1 => High
+        case 2 => Scheduled
+        case _ => Urgent
+      }
+    }
+
+    val connectionType = {
+      val bits = (parameters >> 13) & 3
+
+      bits match {
+        case 0 => Null
+        case 1 => Multicast
+        case 2 => PointToPoint
+        case _ => Reserved
+      }
+    }
+
+    val redundantOwner = ((parameters >> 15) & 1) == 1
+
+    NetworkConnectionParameters(connectionSize, sizeType, priority, connectionType, redundantOwner)
+  }
+
+  def parametersToInt(parameters: NetworkConnectionParameters): Int = {
+    var parametersInt = parameters.connectionSize & 0x1FF
+
+    parametersInt |= (parameters.sizeType.bit << 9)
+    parametersInt |= (parameters.priority.bits << 10)
+    parametersInt |= (parameters.connectionType.bits << 13)
+    if (parameters.redundantOwner) parametersInt |= (1 << 15)
+
+    parametersInt
+  }
+
   object ForwardOpenRequest {
 
     private val ReservedBytesLength = 3
@@ -87,10 +134,10 @@ object ForwardOpen {
       buffer.writeZero(ReservedBytesLength)
 
       buffer.writeInt(request.o2tRpi.toMicros.toInt)
-      buffer.writeShort(request.o2tNetworkConnectionParameters)
+      buffer.writeShort(ForwardOpen.parametersToInt(request.o2tNetworkConnectionParameters))
 
       buffer.writeInt(request.t2oRpi.toMicros.toInt)
-      buffer.writeShort(request.t2oNetworkConnectionParameters)
+      buffer.writeShort(ForwardOpen.parametersToInt(request.t2oNetworkConnectionParameters))
 
       buffer.writeByte(request.transportClassAndTrigger)
 
@@ -134,9 +181,9 @@ object ForwardOpen {
         connectionTimeoutMultiplier,
         connectionPath,
         o2tRpi = Duration(o2tRpi, TimeUnit.MICROSECONDS),
-        o2tNetworkConnectionParameters,
+        ForwardOpen.intToParameters(o2tNetworkConnectionParameters),
         t2oRpi = Duration(t2oRpi, TimeUnit.MICROSECONDS),
-        t2oNetworkConnectionParameters,
+        ForwardOpen.intToParameters(t2oNetworkConnectionParameters),
         transportClassAndTrigger)
     }
   }
@@ -240,8 +287,6 @@ object ForwardOpen {
 
   object NetworkConnectionParameters {
 
-    import scala.language.implicitConversions
-
     object Size {
       sealed abstract class Size(val bit: Int)
       case object FixedSize extends Size(0)
@@ -262,52 +307,6 @@ object ForwardOpen {
       case object Multicast extends ConnectionType(1)
       case object PointToPoint extends ConnectionType(2)
       case object Reserved extends ConnectionType(3)
-    }
-
-    implicit def intToParameters(parameters: Int): NetworkConnectionParameters = {
-      val connectionSize = parameters & 0x1FF
-
-      val sizeType = {
-        val bit = ((parameters >> 9) & 1) == 1
-        if (bit) Size.VariableSize else Size.FixedSize
-      }
-
-      val priority = {
-        val bits = (parameters >> 10) & 3
-
-        bits match {
-          case 0 => Low
-          case 1 => High
-          case 2 => Scheduled
-          case _ => Urgent
-        }
-      }
-
-      val connectionType = {
-        val bits = (parameters >> 13) & 3
-
-        bits match {
-          case 0 => Null
-          case 1 => Multicast
-          case 2 => PointToPoint
-          case _ => Reserved
-        }
-      }
-
-      val redundantOwner = ((parameters >> 15) & 1) == 1
-
-      NetworkConnectionParameters(connectionSize, sizeType, priority, connectionType, redundantOwner)
-    }
-
-    implicit def parametersToInt(parameters: NetworkConnectionParameters): Int = {
-      var parametersInt = parameters.connectionSize & 0x1FF
-
-      parametersInt |= (parameters.sizeType.bit << 9)
-      parametersInt |= (parameters.priority.bits << 10)
-      parametersInt |= (parameters.connectionType.bits << 13)
-      if (parameters.redundantOwner) parametersInt |= (1 << 15)
-
-      parametersInt
     }
 
   }

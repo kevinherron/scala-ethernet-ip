@@ -22,12 +22,18 @@ import java.util.concurrent.TimeUnit
 
 import com.digitalpetri.ethernetip.cip.CipClassCodes
 import com.digitalpetri.ethernetip.cip.epath._
-import com.digitalpetri.ethernetip.client.cip.{CipConnectionManager, CipClient}
-import com.digitalpetri.ethernetip.client.cip.services.{GetAttributeListService, GetAttributeSingleService}
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.ConnectionType.PointToPoint
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Priority.Low
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Size.VariableSize
+import com.digitalpetri.ethernetip.cip.services.LargeForwardOpen.LargeForwardOpenRequest
+import com.digitalpetri.ethernetip.client.cip.services.{GetAttributeListService, GetAttributeSingleService, LargeForwardOpenService}
+import com.digitalpetri.ethernetip.client.cip.{CipClient, CipConnection, CipConnectionManager}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Random, Success}
 
 object EtherNetIpClientMain extends App {
 
@@ -42,7 +48,7 @@ object EtherNetIpClientMain extends App {
     connectionTimeout = Duration(15, TimeUnit.SECONDS))
 
   val client = new CipClient(config)
-  val connectionManager = new CipConnectionManager(client)
+  val connectionManager = new CipConnectionManager(client, 500)
 
   val future = for {
     identity    <- client.listIdentity()
@@ -55,7 +61,7 @@ object EtherNetIpClientMain extends App {
   }
 
   future.onComplete {
-    case Success(_) => for (i <- 0 to 1) testGetAttributeSingle()
+    case Success(_) => testLargeForwardOpen()
     case Failure(ex) => println("Error: " + ex)
   }
 
@@ -98,6 +104,50 @@ object EtherNetIpClientMain extends App {
 //        for {i <- 0 until count} yield println(f"class code: 0x${data.readUnsignedShort()}%02X")
 
       case Failure(ex) => println("GAS error: " + ex)
+    }
+  }
+
+  def testLargeForwardOpen(): Unit = {
+    val segments = config.connectionPath.segments ++ ForwardOpen.MessageRouterConnectionPoint.segments
+    val connectionPath = PaddedEPath(segments: _*)
+
+    val parameters = NetworkConnectionParameters(
+      connectionSize  = 4000,
+      sizeType        = VariableSize,
+      priority        = Low,
+      connectionType  = PointToPoint,
+      redundantOwner  = false)
+
+    val request = LargeForwardOpenRequest(
+      timeout                 = config.connectionTimeout,
+      connectionSerialNumber  = Random.nextInt(),
+      vendorId                = 0,
+      vendorSerialNumber      = 0,
+      connectionPath          = connectionPath,
+      o2tNetworkConnectionParameters = parameters,
+      t2oNetworkConnectionParameters = parameters)
+
+    val service = new LargeForwardOpenService(request)
+
+    client.sendUnconnectedData(service.getRequestData).onComplete {
+      case Success(responseData) => service.setResponseData(responseData)
+      case Failure(ex) => service.setResponseFailure(ex)
+    }
+
+    service.response.onComplete {
+      case Success(response) =>
+        val connection = CipConnection(
+          o2tConnectionId         = response.o2tConnectionId,
+          t2oConnectionId         = response.t2oConnectionId,
+          serialNumber            = response.connectionSerialNumber,
+          originatorVendorId      = response.originatorVendorId,
+          originatorSerialNumber  = response.originatorSerialNumber,
+          timeout                 = config.connectionTimeout)
+
+        println(s"CipConnection allocated: $connection")
+
+      case Failure(ex) =>
+        println(s"Failed to open CipConnection: ${ex.getMessage}")
     }
   }
 

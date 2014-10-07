@@ -25,7 +25,11 @@ import com.digitalpetri.ethernetip.cip.epath.{ClassId, InstanceId, PaddedEPath}
 import com.digitalpetri.ethernetip.cip.services.ForwardClose.{ForwardCloseRequest, ForwardCloseResponse}
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen
 import com.digitalpetri.ethernetip.cip.services.ForwardOpen.ForwardOpenRequest
-import com.digitalpetri.ethernetip.client.cip.services.{ForwardCloseService, ForwardOpenService}
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.ConnectionType.PointToPoint
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Priority.Low
+import com.digitalpetri.ethernetip.cip.services.ForwardOpen.NetworkConnectionParameters.Size.VariableSize
+import com.digitalpetri.ethernetip.cip.services.LargeForwardOpen.LargeForwardOpenRequest
+import com.digitalpetri.ethernetip.client.cip.services.{ForwardOpenService, ForwardCloseService, LargeForwardOpenService}
 import com.digitalpetri.ethernetip.client.util.AsyncQueue
 import com.typesafe.scalalogging.StrictLogging
 import io.netty.util.{Timeout, TimerTask}
@@ -34,7 +38,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Random, Success}
 
-class CipConnectionManager(client: CipClient) extends StrictLogging {
+class CipConnectionManager(client: CipClient, connectionSize: Int) extends StrictLogging {
 
   private implicit val executionContext = client.config.executionContext
 
@@ -55,7 +59,7 @@ class CipConnectionManager(client: CipClient) extends StrictLogging {
 
     if (!future.isCompleted) {
       if (count.incrementAndGet() <= config.concurrency) {
-        allocateConnection().onComplete {
+        forwardOpen().onComplete {
           case Success(connection) => offerConnection(connection)
           case Failure(ex) => count.decrementAndGet()
         }
@@ -122,22 +126,47 @@ class CipConnectionManager(client: CipClient) extends StrictLogging {
     queue.offer(connection)
   }
 
-  private def allocateConnection(): Future[CipConnection] = {
+  private def forwardOpen(): Future[CipConnection] = {
     val promise = Promise[CipConnection]()
 
-    val segments = config.connectionPath.segments ++ ForwardOpen.MessageRouterConnectionPoint.segments
+    val segments = config.connectionPath.segments ++
+      ForwardOpen.MessageRouterConnectionPoint.segments
+
     val connectionPath = PaddedEPath(segments: _*)
 
-    val request = ForwardOpenRequest(
-      timeout                 = config.connectionTimeout,
-      connectionSerialNumber  = Random.nextInt(),
-      vendorId                = 0,
-      vendorSerialNumber      = 0,
-      connectionPath          = connectionPath,
-      o2tNetworkConnectionParameters = ForwardOpen.DefaultExplicitConnectionParameters,
-      t2oNetworkConnectionParameters = ForwardOpen.DefaultExplicitConnectionParameters)
+    val parameters = ForwardOpen.NetworkConnectionParameters(
+      connectionSize  = connectionSize,
+      sizeType        = VariableSize,
+      priority        = Low,
+      connectionType  = PointToPoint,
+      redundantOwner  = false)
 
-    val service = new ForwardOpenService(request)
+    val service = {
+      if (connectionSize > 500) {
+        val request = LargeForwardOpenRequest(
+          timeout                 = config.connectionTimeout,
+          connectionSerialNumber  = Random.nextInt(),
+          vendorId                = 0,
+          vendorSerialNumber      = 0,
+          connectionPath          = connectionPath,
+          o2tNetworkConnectionParameters = parameters,
+          t2oNetworkConnectionParameters = parameters)
+
+        new LargeForwardOpenService(request)
+      } else {
+        val request = ForwardOpenRequest(
+          timeout                 = config.connectionTimeout,
+          connectionSerialNumber  = Random.nextInt(),
+          vendorId                = 0,
+          vendorSerialNumber      = 0,
+          connectionPath          = connectionPath,
+          o2tNetworkConnectionParameters = parameters,
+          t2oNetworkConnectionParameters = parameters)
+
+        new ForwardOpenService(request)
+      }
+    }
+
 
     client.sendUnconnectedData(service.getRequestData).onComplete {
       case Success(responseData) => service.setResponseData(responseData)

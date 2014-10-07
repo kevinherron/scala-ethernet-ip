@@ -35,8 +35,8 @@ class NetworkConnectionParametersTest extends FunSuite {
   }
 
   private def params2int2params(parameters: NetworkConnectionParameters): NetworkConnectionParameters = {
-    val i: Int = parameters
-    val p: NetworkConnectionParameters = i
+    val i: Int = ForwardOpen.parametersToInt(parameters)
+    val p: NetworkConnectionParameters = ForwardOpen.intToParameters(i)
     p
   }
 
