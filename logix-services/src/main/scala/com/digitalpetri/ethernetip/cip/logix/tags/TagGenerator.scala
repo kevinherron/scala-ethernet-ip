@@ -26,33 +26,69 @@ object TagGenerator {
 
         symbol.symbolType match {
           case symbolType: AtomicSymbolType =>
-            createAtomicTag(symbol.symbolName, path, symbol.program, arrayInfo, None, symbolType.tagType)
+            createAtomicTag(
+              name          = symbol.symbolName,
+              address       = symbol.symbolName,
+              path          = path,
+              program       = symbol.program,
+              dimensions    = arrayInfo,
+              parentAddress = None,
+              tagType       = symbolType.tagType,
+              symbolic      = symbolicAddressing)
 
           case symbolType: StructuredSymbolType =>
             val template = templates.get(symbolType.templateInstanceId).get
 
-            createStructuredTag(template.name, path, symbol.program, arrayInfo, None, template)
+            createStructuredTag(
+              name          = symbol.symbolName,
+              address       = symbol.symbolName,
+              path          = path,
+              program       = symbol.program,
+              dimensions    = arrayInfo,
+              parentAddress = None,
+              template      = template,
+              symbolic      = symbolicAddressing)
         }
     }
   }
 
   private def createAtomicTag(name: String,
+                              address: String,
                               path: List[EPathSegment],
                               program: Option[String],
                               dimensions: Array[Int],
                               parentAddress: Option[String],
-                              tagType: TagType): LogixTag = {
-
-    val address = tagAddress(name, path)
+                              tagType: TagType,
+                              symbolic: Boolean): LogixTag = {
 
     if (dimensions.length > 0) {
       val children = for {
         arrayElement <- arrayElements(name, dimensions)
       } yield {
         val elementName = arrayElement.name
-        val elementPath = path ++ arrayElement.indices.map(i => MemberId(i))
+        val memberIds = arrayElement.indices.map(i => MemberId(i)).toList
+        val elementPath = path ++ memberIds
 
-        createAtomicTag(elementName, elementPath, program, Array.empty, Some(address), tagType)
+        val elementAddress = memberIds match {
+          case MemberId(d1, _) :: MemberId(d2, _) :: MemberId(d3, _) :: Nil =>
+            s"$address[$d1,$d2,$d3]"
+
+          case MemberId(d1, _) :: MemberId(d2, _) :: Nil =>
+            s"$address[$d1,$d2]"
+
+          case MemberId(d1, _) :: Nil =>
+            s"$address[$d1]"
+        }
+
+        createAtomicTag(
+          name          = elementName,
+          address       = elementAddress,
+          path          = elementPath,
+          program       = program,
+          dimensions    = Array.empty,
+          parentAddress = Some(address),
+          tagType       = tagType,
+          symbolic      = symbolic)
       }
 
       AtomicTag(name, address, path, program, dimensions, parentAddress, children, tagType)
@@ -62,28 +98,48 @@ object TagGenerator {
   }
 
   private def createStructuredTag(name: String,
+                                  address: String,
                                   path: List[EPathSegment],
                                   program: Option[String],
                                   dimensions: Array[Int],
                                   parentAddress: Option[String],
-                                  template: TemplateInstance)
+                                  template: TemplateInstance,
+                                  symbolic: Boolean)
                                  (implicit templates: Map[Int, TemplateInstance]): LogixTag = {
-
-    val address = tagAddress(name, path)
 
     if (dimensions.length > 0) {
       val children = for {
         arrayElement <- arrayElements(name, dimensions)
       } yield {
         val elementName = arrayElement.name
-        val elementPath = path ++ arrayElement.indices.map(i => MemberId(i))
+        val memberIds = arrayElement.indices.map(i => MemberId(i)).toList
+        val elementPath = path ++ memberIds
 
-        createStructuredTag(elementName, elementPath, program, Array.empty, Some(address), template)
+        val elementAddress = memberIds match {
+          case MemberId(d1, _) :: MemberId(d2, _) :: MemberId(d3, _) :: Nil =>
+            s"$address[$d1,$d2,$d3]"
+
+          case MemberId(d1, _) :: MemberId(d2, _) :: Nil =>
+            s"$address[$d1,$d2]"
+
+          case MemberId(d1, _) :: Nil =>
+            s"$address[$d1]"
+        }
+
+        createStructuredTag(
+          name          = elementName,
+          address       = elementAddress,
+          path          = elementPath,
+          program       = program,
+          dimensions    = Array.empty,
+          parentAddress = Some(address),
+          template      = template,
+          symbolic      = symbolic)
       }
 
       StructuredTag(name, address, path, program, dimensions, parentAddress, children, template)
     } else {
-      def createMemberTag(member: TemplateMember): LogixTag = {
+      def createMemberTag(member: TemplateMember, index: Int): LogixTag = {
         val infoWord = member.infoWord
         val symbolType = member.symbolType
 
@@ -92,7 +148,10 @@ object TagGenerator {
           else Array.empty[Int] // scalar
         }
 
-        val memberPath = path :+ AnsiDataSegment(member.name)
+        val memberPath: List[EPathSegment] = {
+          if (symbolic) path :+ AnsiDataSegment(member.name)
+          else path :+ MemberId(index)
+        }
 
         symbolType match {
           case t: AtomicSymbolType =>
@@ -101,14 +160,30 @@ object TagGenerator {
               case otherType => otherType
             }
 
-            createAtomicTag(member.name, memberPath, program, dimensions, Some(address), tagType)
+            createAtomicTag(
+              name          = member.name,
+              address       = s"$address.${member.name}",
+              path          = memberPath,
+              program       = program,
+              dimensions    = dimensions,
+              parentAddress = Some(address),
+              tagType       = tagType,
+              symbolic      = symbolic)
 
           case t: StructuredSymbolType =>
-            createStructuredTag(member.name, memberPath, program, dimensions, Some(address), templates.get(t.templateInstanceId).get)
+            createStructuredTag(
+              name          = member.name,
+              address       = s"$address.${member.name}",
+              path          = memberPath,
+              program       = program,
+              dimensions    = dimensions,
+              parentAddress = Some(address),
+              template      = templates.get(t.templateInstanceId).get,
+              symbolic      = symbolic)
         }
       }
 
-      val children = template.members.map(createMemberTag)
+      val children = template.members.zipWithIndex.map(tuple => createMemberTag(tuple._1, tuple._2))
 
       StructuredTag(name, address, path, program, dimensions, parentAddress, children, template)
     }
@@ -133,37 +208,6 @@ object TagGenerator {
   private def cartesianProduct[T](listOfLists: List[List[T]]): List[List[T]] = listOfLists match {
     case Nil => List(List())
     case xs :: xss => for (y <- xs; ys <- cartesianProduct(xss)) yield y :: ys
-  }
-
-  private def tagAddress(tagName: String, tagPath: Seq[EPathSegment]): String = {
-    def _path(segments: List[EPathSegment], path: String): String = {
-      segments match {
-        case Nil => path
-
-        case ClassId(_, _) :: InstanceId(_, _) :: remaining =>
-          if (path.length == 0) _path(remaining, tagName)
-          else _path(remaining, s"$path.$tagName")
-
-        case AnsiDataSegment(s1) :: remaining =>
-          if (path.length == 0) _path(remaining, s1)
-          else _path(remaining, s"$path.$s1")
-
-        case MemberId(d1, _) :: MemberId(d2, _) :: MemberId(d3, _) :: remaining =>
-          _path(remaining, s"$path[$d1,$d2,$d3]")
-
-        case MemberId(d1, _) :: MemberId(d2, _) :: remaining =>
-          _path(remaining, s"$path[$d1,$d2]")
-
-        case MemberId(d1, _) :: remaining =>
-          _path(remaining, s"$path[$d1]")
-
-        case segment :: remaining =>
-          // Don't append unknown segment types.
-          _path(remaining, path)
-      }
-    }
-
-    _path(tagPath.toList, "")
   }
 
 }
