@@ -24,11 +24,13 @@ object TagGenerator {
           else program :+ ClassId(LogixClassCodes.Symbol) :+ InstanceId(symbol.instanceId)
         }
 
+        val address = symbol.program.map(p => s"$p.${symbol.symbolName}").getOrElse(symbol.symbolName)
+
         symbol.symbolType match {
           case symbolType: AtomicSymbolType =>
             createAtomicTag(
               name          = symbol.symbolName,
-              address       = symbol.symbolName,
+              address       = address,
               path          = path,
               program       = symbol.program,
               dimensions    = arrayInfo,
@@ -41,7 +43,7 @@ object TagGenerator {
 
             createStructuredTag(
               name          = symbol.symbolName,
-              address       = symbol.symbolName,
+              address       = address,
               path          = path,
               program       = symbol.program,
               dimensions    = arrayInfo,
