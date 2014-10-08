@@ -125,7 +125,13 @@ object LogicalSegment {
     segmentByte |= segment.format.formatId
 
     buffer.writeByte(segmentByte)
-    if (padded) buffer.writeByte(0x00)
+
+    if (padded) {
+      segment.format match {
+        case Bits_16 | Bits_32 => buffer.writeByte(0x00)
+        case _ =>
+      }
+    }
 
     segment match {
       case s: ClassId         => encodeIntSegment(s, buffer)
