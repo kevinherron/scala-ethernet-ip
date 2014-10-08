@@ -2,7 +2,7 @@ package com.digitalpetri.ethernetip.cip.services
 
 import java.util.concurrent.TimeUnit
 
-import com.digitalpetri.ethernetip.cip.epath.PaddedEPath
+import com.digitalpetri.ethernetip.cip.epath._
 import com.digitalpetri.ethernetip.util.{Buffers, TimeoutCalculator}
 import io.netty.buffer.ByteBuf
 
@@ -31,7 +31,30 @@ object ForwardClose {
       buffer.writeShort(request.originatorVendorId)
       buffer.writeInt(request.originatorSerialNumber.toInt)
 
-      PaddedEPath.encode(request.connectionPath, buffer)
+      // length placeholder...
+      val lengthStartIndex = buffer.writerIndex()
+      buffer.writeByte(0)
+
+      // reserved
+      buffer.writeByte(0)
+
+      // encode the path segments...
+      val dataStartIndex = buffer.writerIndex()
+
+      request.connectionPath.segments.foreach {
+        case s: LogicalSegment[_] => LogicalSegment.encode(s, padded = true, buffer)
+        case s: PortSegment       => PortSegment.encode(s, buffer)
+        case s: AnsiDataSegment   => AnsiDataSegment.encode(s, buffer)
+        case s: SimpleDataSegment => SimpleDataSegment.encode(s, buffer)
+      }
+
+      // go back and update the length
+      val bytesWritten = buffer.writerIndex() - dataStartIndex
+      val wordsWritten = bytesWritten / 2
+      buffer.markWriterIndex()
+      buffer.writerIndex(lengthStartIndex)
+      buffer.writeByte(wordsWritten.asInstanceOf[Short])
+      buffer.resetWriterIndex()
     }
 
     def decode(buffer: ByteBuf): ForwardCloseRequest = {
@@ -44,7 +67,19 @@ object ForwardClose {
       val connectionSerialNumber  = buffer.readUnsignedShort()
       val originatorVendorId      = buffer.readUnsignedShort()
       val originatorSerialNumber  = buffer.readUnsignedInt()
-      val connectionPath          = PaddedEPath.decode(buffer)
+
+      val wordCount = buffer.readUnsignedByte()
+      val byteCount = wordCount * 2
+
+      buffer.skipBytes(1) // reserved
+
+      val dataStartIndex = buffer.readerIndex()
+      def decodeSegments(segments: Seq[EPathSegment] = Seq.empty): Seq[EPathSegment] = {
+        if (buffer.readerIndex() >= dataStartIndex + byteCount) segments
+        else decodeSegments(segments :+ EPathSegment.decode(buffer))
+      }
+
+      val connectionPath = PaddedEPath(decodeSegments(): _*)
 
       ForwardCloseRequest(
         connectionTimeout,
