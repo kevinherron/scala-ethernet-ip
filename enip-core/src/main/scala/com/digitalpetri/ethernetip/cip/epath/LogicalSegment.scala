@@ -16,9 +16,7 @@
 
 package com.digitalpetri.ethernetip.cip.epath
 
-import com.digitalpetri.ethernetip.cip.epath.LogicalSegment.LogicalFormat._
-import com.digitalpetri.ethernetip.cip.epath.LogicalSegment.{ElectronicKey, LogicalFormat, LogicalType}
-import com.digitalpetri.ethernetip.cip.epath.LogicalSegment.LogicalType.LogicalType
+import com.digitalpetri.ethernetip.cip.epath.LogicalSegment._
 import com.digitalpetri.ethernetip.util.Buffers
 import io.netty.buffer.ByteBuf
 
@@ -32,30 +30,48 @@ sealed abstract class LogicalSegment[T](val logicalType: LogicalType) extends EP
   def value: T
 }
 
-case class ClassId(value: Int, format: LogicalFormat = LogicalFormat.Bits_16)
-  extends LogicalSegment[Int](LogicalType.ClassId)
+case class ClassId(value: Int, format: LogicalFormat = Bits_16)
+  extends LogicalSegment[Int](ClassId_T)
 
-case class InstanceId(value: Int, format: LogicalFormat = LogicalFormat.Bits_16)
-  extends LogicalSegment[Int](LogicalType.InstanceId)
+case class InstanceId(value: Int, format: LogicalFormat = Bits_16)
+  extends LogicalSegment[Int](InstanceId_T)
 
-case class MemberId(value: Int, format: LogicalFormat = LogicalFormat.Bits_16)
-  extends LogicalSegment[Int](LogicalType.MemberId)
+case class MemberId(value: Int, format: LogicalFormat = Bits_16)
+  extends LogicalSegment[Int](MemberId_T)
 
-case class ConnectionPoint(value: Int, format: LogicalFormat = LogicalFormat.Bits_16)
-  extends LogicalSegment[Int](LogicalType.ConnectionPoint)
+case class ConnectionPoint(value: Int, format: LogicalFormat = Bits_16)
+  extends LogicalSegment[Int](ConnectionPoint_T)
 
-case class AttributeId(value: Int, format: LogicalFormat = LogicalFormat.Bits_16)
-  extends LogicalSegment[Int](LogicalType.AttributeId)
+case class AttributeId(value: Int, format: LogicalFormat = Bits_16)
+  extends LogicalSegment[Int](AttributeId_T)
 
 case class ServiceId(value: Int)
-  extends LogicalSegment[Int](LogicalType.ServiceId) {
-  override def format: LogicalFormat = LogicalFormat.Bits_8
+  extends LogicalSegment[Int](ServiceId_T) {
+  override def format: LogicalFormat = Bits_8
 }
 
 case class KeySegment(value: ElectronicKey)
-  extends LogicalSegment[ElectronicKey](LogicalType.Special) {
-  override def format: LogicalFormat = LogicalFormat.Bits_8
+  extends LogicalSegment[ElectronicKey](Special_T) {
+  override def format: LogicalFormat = Bits_8
 }
+
+sealed abstract class LogicalType(val typeId: Int)
+
+case object ClassId_T         extends LogicalType(0x0)
+case object InstanceId_T      extends LogicalType(0x1)
+case object MemberId_T        extends LogicalType(0x2)
+case object ConnectionPoint_T extends LogicalType(0x3)
+case object AttributeId_T     extends LogicalType(0x4)
+case object Special_T         extends LogicalType(0x5)
+case object ServiceId_T       extends LogicalType(0x6)
+case object Reserved_T        extends LogicalType(0x7)
+
+sealed abstract class LogicalFormat(val formatId: Int)
+
+case object Bits_8    extends LogicalFormat(0x0)
+case object Bits_16   extends LogicalFormat(0x1)
+case object Bits_32   extends LogicalFormat(0x2)
+case object Reserved  extends LogicalFormat(0x3)
 
 object LogicalSegment {
 
@@ -97,27 +113,7 @@ object LogicalSegment {
 
   }
 
-  object LogicalType {
-    sealed abstract class LogicalType(val typeId: Int)
 
-    case object ClassId         extends LogicalType(0x0)
-    case object InstanceId      extends LogicalType(0x1)
-    case object MemberId        extends LogicalType(0x2)
-    case object ConnectionPoint extends LogicalType(0x3)
-    case object AttributeId     extends LogicalType(0x4)
-    case object Special         extends LogicalType(0x5)
-    case object ServiceId       extends LogicalType(0x6)
-    case object Reserved        extends LogicalType(0x7)
-  }
-
-  object LogicalFormat {
-    sealed abstract class LogicalFormat(val formatId: Int)
-
-    case object Bits_8    extends LogicalFormat(0x0)
-    case object Bits_16   extends LogicalFormat(0x1)
-    case object Bits_32   extends LogicalFormat(0x2)
-    case object Reserved  extends LogicalFormat(0x3)
-  }
 
   val SegmentType = 0x01
 
