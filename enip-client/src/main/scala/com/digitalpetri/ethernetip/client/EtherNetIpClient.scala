@@ -221,7 +221,12 @@ class EtherNetIpClient(config: EtherNetIpClientConfig) extends PacketReceiver wi
             }
         }
 
-      case status => logger.error(s"Received encapsulation layer status: $status")
+      case otherStatus =>
+        pendingPackets.remove(packet.senderContext) match {
+          case Some(promise) => promise.failure(new Exception(s"$otherStatus"))
+          case None => logger.error(s"Received encapsulation layer status: $otherStatus")
+        }
+
     }
   }
 
