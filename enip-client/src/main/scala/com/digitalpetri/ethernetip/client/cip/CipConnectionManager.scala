@@ -146,8 +146,8 @@ class CipConnectionManager(client: CipClient, connectionSize: Int) extends Stric
         val request = LargeForwardOpenRequest(
           timeout                 = config.connectionTimeout,
           connectionSerialNumber  = Random.nextInt(),
-          vendorId                = 0,
-          vendorSerialNumber      = 0,
+          vendorId                = config.vendorId,
+          vendorSerialNumber      = config.serialNumber,
           connectionPath          = connectionPath,
           o2tNetworkConnectionParameters = parameters,
           t2oNetworkConnectionParameters = parameters)
@@ -157,8 +157,8 @@ class CipConnectionManager(client: CipClient, connectionSize: Int) extends Stric
         val request = ForwardOpenRequest(
           timeout                 = config.connectionTimeout,
           connectionSerialNumber  = Random.nextInt(),
-          vendorId                = 0,
-          vendorSerialNumber      = 0,
+          vendorId                = config.vendorId,
+          vendorSerialNumber      = config.serialNumber,
           connectionPath          = connectionPath,
           o2tNetworkConnectionParameters = parameters,
           t2oNetworkConnectionParameters = parameters)
