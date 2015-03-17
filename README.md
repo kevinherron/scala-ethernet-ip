@@ -1,4 +1,4 @@
 EtherNet/IP
 ===========
 
-This Scala implementation is no longer being developed. See the Java implementation here: https://github.com/digitalpetri/enip
+This Scala implementation is no longer being developed. See the Java implementation here: https://github.com/digitalpetri/ethernet-ip
